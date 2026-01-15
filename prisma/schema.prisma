@@ -1,0 +1,140 @@
+//prisma schema 
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String
+  slug       String   @unique
+  shortDesc  String?
+  content    String
+  metaTitle  String?
+  metaDesc   String?
+  ogTitle    String?
+  ogDesc     String?
+  ogImage    String?
+  canonical  String?
+  mainImage  String?
+  images     String[]
+  categoryId Int
+  authorId   Int
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  featured   Boolean  @default(false)
+  author     Admin    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([featured])
+}
+
+model Category {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  slug            String   @unique
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  posts           Post[]
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN")
+  posts     Post[]
+  resetToken       String?   // new
+  resetTokenExpiry DateTime? // new
+  createdAt DateTime @default(now())
+  updatedAt DateTime? // make it nullable temporarily
+}
+
+model LegalPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  description String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("legal_pages")
+}
+
+model ContactMessage {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  subject     String
+  message     String
+  status      String   @default("unread") // unread, read, replied, archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contact_messages")
+}
+
+enum AdType {
+  AFFILIATE
+  LINK
+  BANNER
+  POPUP
+  VIDEO
+  CUSTOM
+}
+
+model Advertisement {
+  id        String   @id @default(cuid())
+
+  title     String
+  adType    AdType   @default(CUSTOM)
+
+  html      String?
+  linkUrl   String?
+  image     String?
+  script    String?
+
+  pageType  String   // home | post | category | tool | static
+  pageSlug  String?  // post slug / category slug / tool slug / null for global
+
+  position  String   // content-top | sidebar-bottom | etc
+
+  isActive  Boolean  @default(true)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  impressions Int    @default(0)
+  clicks     Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageType, pageSlug, position])
+}
+
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model SocialLink {
+  id        Int      @id @default(autoincrement())
+  platform  String   @unique          // e.g., "facebook", "twitter", "instagram", "linkedin"
+  url       String                       // the full URL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
