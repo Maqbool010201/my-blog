@@ -1,8 +1,7 @@
-import { authOptions } from "@/lib/authOptions"
+import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/authOptions";
 
 export async function POST(req) {
   try {
