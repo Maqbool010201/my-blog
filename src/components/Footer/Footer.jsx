@@ -33,7 +33,7 @@ export default async function Footer() {
 
           {/* Brand / About - Takes full width on mobile, 2 cols on MD */}
           <div className="col-span-2">
-            <h3 className="text-2xl font-bold mb-4 bg-linear-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               Wisemix Media
             </h3>
             <p className="text-gray-400 mb-6 max-w-sm text-sm leading-relaxed">
@@ -93,7 +93,7 @@ export default async function Footer() {
               <p className="text-gray-400 text-sm">
                 © {year} <span className="font-semibold text-gray-200">Wisemix Media</span>. All rights reserved.
               </p>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-gray-500 text-xs mt-1">
                 Multi-niche blog platform for expert insights.
               </p>
             </div>
