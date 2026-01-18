@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function StaticHero() {
   // ImageKit URL
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-1400,q-80";
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-1000,q-80";
 
   return (
     <section className="relative w-full h-[450px] sm:h-[500px] lg:h-[650px] overflow-hidden bg-slate-900">
