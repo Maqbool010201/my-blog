@@ -1,6 +1,6 @@
 // src/app/api/admin/reset-password/route.js
 import prisma from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 
