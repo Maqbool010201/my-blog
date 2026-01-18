@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {},
-
+  // turbopack ہٹا دیا گیا ہے کیونکہ یہ ورژن 15 میں سپورٹڈ نہیں ہے
+  
   images: {
-    // ImageKit کی تصاویر کو اجازت دینے کے لیے یہ حصہ ضروری ہے
     loader: 'custom',
     loaderFile: './src/lib/imagekitLoader.js',
     formats: ['image/avif', 'image/webp'],
@@ -23,7 +22,7 @@ const nextConfig = {
   compress: true,
 
   experimental: {
-    optimizeCss: true,
+    // optimizeCss کو فی الحال ہٹا دیا ہے کیونکہ یہ بلڈ میں کبھی کبھی مسئلہ کرتا ہے
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
