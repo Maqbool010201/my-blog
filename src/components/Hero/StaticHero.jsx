@@ -1,24 +1,25 @@
 import Image from 'next/image';
 
 export default function StaticHero() {
-  // ImageKit URL
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-1000,q-80";
+  // چونکہ آپ نے Custom Loader لگایا ہوا ہے، اس لیے صرف فائل کا نام/پاتھ دیں
+  // لوڈر خود ہی "https://ik.imagekit.io/ag0dicbdub/" اور "w=1000,q-80" لگا دے گا
+  const heroImageUrl = "uploads/hero6.webp"; 
 
   return (
-    <section className="relative w-full h-[450px] sm:h-[500px] lg:h-[650px] overflow-hidden bg-slate-900">
+    <section className="relative w-full h-112.5 sm:h-125 lg:h-162.5 overflow-hidden bg-slate-900">
       
       {/* Background Image using Next.js Optimizer */}
       <Image
         src={heroImageUrl}
         alt="Wise Mix Media Hero Background"
-        fill // Ye absolute inset-0 ka kaam karega
-        priority // Ye fetchPriority="high" ka kaam karega aur LCP behtar karega
+        fill 
+        priority 
         sizes="100vw"
         className="object-cover object-top md:object-center opacity-80"
       />
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 md:bg-gradient-to-r md:from-white/95 md:via-white/60 md:to-transparent z-[1]" />
+      {/* Gradient Overlay: Accessibility بہتر کرنے کے لیے opacity تھوڑی بڑھا دی ہے */}
+      <div className="absolute inset-0 bg-linear-to-b from-black/75 via-transparent to-black/80 md:bg-linear-to-r md:from-white/95 md:via-white/60 md:to-transparent z-1" />
 
       {/* Hero Content */}
       <div className="relative z-10 container mx-auto h-full px-6 flex items-center justify-center md:justify-start">
@@ -43,7 +44,6 @@ export default function StaticHero() {
               Read Articles
             </button>
           </div>
-
         </div>
       </div>
     </section>
