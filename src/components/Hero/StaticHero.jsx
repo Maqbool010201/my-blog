@@ -1,34 +1,48 @@
+import Image from 'next/image';
+
 export default function StaticHero() {
+  // ImageKit path (Custom Loader will handle the rest)
+  const heroImageUrl = "uploads/hero6.webp"; 
+
   return (
-    <section className="relative w-full h-112.5 sm:h-125 lg:h-162.5 overflow-hidden bg-slate-900 flex items-center justify-center md:justify-start">
+    <section className="relative w-full h-112.5 sm:h-125 lg:h-162.5 overflow-hidden bg-slate-900">
       
-      {/* CSS Gradient Background: تصویر کا رولہ ختم */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 opacity-90" />
-      
-      {/* Decorative Circles: بیک گراؤنڈ کو خوبصورت بنانے کے لیے ہلکے سے گول دائرے */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl z-0" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-600/10 rounded-full blur-3xl z-0" />
+      {/* Background Image using Next.js Optimizer */}
+      <Image
+        src={heroImageUrl}
+        alt="Wise Mix Media Hero Background"
+        fill 
+        priority // Required for LCP
+        fetchPriority="high" // یہ براؤزر کو بتائے گا کہ اسے فوراً ڈاؤن لوڈ کرنا ہے (Lighthouse Fix)
+        loading="eager"      // سست روی (Lazy load) کو روکنے کے لیے
+        decoding="sync"      // امیج کو فوری رینڈر کرنے کے لیے
+        sizes="100vw"
+        className="object-cover object-top md:object-center opacity-80"
+      />
+
+      {/* Gradient Overlay: Accessibility بہتر کرنے کے لیے ڈارک کنٹراسٹ بڑھا دیا ہے */}
+      <div className="absolute inset-0 bg-linear-to-b from-black/85 via-transparent to-black/90 md:bg-linear-to-r md:from-white/95 md:via-white/60 md:to-transparent z-1" />
 
       {/* Hero Content */}
-      <div className="relative z-10 container mx-auto px-6">
-        <div className="max-w-4xl text-center md:text-left">
+      <div className="relative z-10 container mx-auto h-full px-6 flex items-center justify-center md:justify-start">
+        <div className="max-w-4xl text-center md:text-left text-white md:text-slate-900">
           
-          <span className="inline-block mb-3 text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase text-blue-400">
+          <span className="inline-block mb-3 text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase text-blue-400 md:text-blue-600">
             Trusted Digital Media Platform
           </span>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.1] tracking-tight text-white">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.1] tracking-tight">
             Insightful Content.<br />
-            <span className="text-blue-400">Curated for Growth.</span>
+            <span className="text-blue-400 md:text-blue-600">Curated for Growth.</span>
           </h1>
 
-          <p className="mt-6 text-base md:text-xl text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="mt-6 text-base md:text-xl text-slate-200 md:text-slate-600 leading-relaxed max-w-2xl font-medium">
             Explore expert-written articles across technology, business, and lifestyle. 
             Wise Mix Media delivers clarity, depth, and value.
           </p>
 
           <div className="mt-8">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold transition-all transform hover:scale-105 cursor-pointer shadow-lg shadow-blue-600/20">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105 cursor-pointer">
               Read Articles
             </button>
           </div>
