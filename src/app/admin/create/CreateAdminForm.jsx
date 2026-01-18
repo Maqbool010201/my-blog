@@ -1,24 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function CreateAdminForm() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const [payload, setPayload] = useState({
     name: "",
     email: "",
     password: "",
-    role: "SUPER_ADMIN",
+    role: "ADMIN",
   });
   const [msg, setMsg] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Set isClient to true on mount
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // Handle authentication and authorization
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session || session.role !== "SUPER_ADMIN") {
+      router.push("/admin/login");
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [session, status, router]);
+
+  // Submit handler
   async function submit(e) {
     e.preventDefault();
     setLoading(true);
@@ -31,15 +48,16 @@ export default function CreateAdminForm() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => {
+        setMsg("Server returned non-JSON response");
+        return null;
+      });
 
-      if (res.ok) {
-        setMsg("کامیابی! ایڈمن اکاؤنٹ بن گیا ہے۔ اب آپ لاگ ان کر سکتے ہیں۔");
-        setPayload({ name: "", email: "", password: "", role: "SUPER_ADMIN" });
-        // 5 سیکنڈ بعد لاگ ان پیج پر بھیج دیں
-        setTimeout(() => router.push("/admin/login"), 5000);
+      if (res.ok && data?.admin) {
+        setMsg("Created: " + data.admin.email);
+        setPayload({ name: "", email: "", password: "", role: "ADMIN" });
       } else {
-        setMsg("ایرر: " + (data?.error || "کچھ غلط ہو گیا"));
+        setMsg("Error: " + (data?.error || "unknown"));
       }
     } catch (err) {
       setMsg("Error: " + err.message);
@@ -48,49 +66,106 @@ export default function CreateAdminForm() {
     }
   }
 
-  if (!isClient) return null;
+  // Don't render anything on server to prevent mismatch
+  if (!isClient) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md space-y-4">
+        {/* Empty form skeleton for server render */}
+        <h1 className="text-2xl font-semibold text-center">Create Admin</h1>
+        <div className="space-y-4">
+          <div className="w-full border px-4 py-2 rounded-lg h-10 bg-gray-100"></div>
+          <div className="w-full border px-4 py-2 rounded-lg h-10 bg-gray-100"></div>
+          <div className="w-full border px-4 py-2 rounded-lg h-10 bg-gray-100"></div>
+          <div className="w-full border px-4 py-2 rounded-lg h-10 bg-gray-100"></div>
+          <div className="w-full bg-gray-200 text-white py-2 rounded-lg font-semibold h-10"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state only on client
+  if (status === "loading") {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <div className="text-center py-8">Checking authentication...</div>
+      </div>
+    );
+  }
+
+  // Don't show form if not authorized
+  if (!isAuthorized) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <div className="text-center py-8">Redirecting to login...</div>
+      </div>
+    );
+  }
 
   return (
-    <form onSubmit={submit} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md space-y-4">
-      <h1 className="text-2xl font-semibold text-center text-gray-800">پہلا ایڈمن بنائیں</h1>
-      
+    <form
+      onSubmit={submit}
+      className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md space-y-4"
+    >
+      <h1 className="text-2xl font-semibold text-center">Create Admin</h1>
+
       <input
         type="text"
-        placeholder="نام"
+        placeholder="Name"
         value={payload.name}
-        onChange={(e) => setPayload({ ...payload, name: e.target.value })}
+        onChange={(e) =>
+          setPayload((prev) => ({ ...prev, name: e.target.value }))
+        }
         required
-        className="w-full border p-2 rounded text-gray-700"
+        className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
       />
 
       <input
         type="email"
-        placeholder="ای میل"
+        placeholder="Email"
         value={payload.email}
-        onChange={(e) => setPayload({ ...payload, email: e.target.value })}
+        onChange={(e) =>
+          setPayload((prev) => ({ ...prev, email: e.target.value }))
+        }
         required
-        className="w-full border p-2 rounded text-gray-700"
+        className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
       />
 
       <input
         type="password"
-        placeholder="پاسورڈ"
+        placeholder="Password"
         value={payload.password}
-        onChange={(e) => setPayload({ ...payload, password: e.target.value })}
+        onChange={(e) =>
+          setPayload((prev) => ({ ...prev, password: e.target.value }))
+        }
         required
-        className="w-full border p-2 rounded text-gray-700"
+        className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
       />
+
+      <select
+        value={payload.role}
+        onChange={(e) =>
+          setPayload((prev) => ({ ...prev, role: e.target.value }))
+        }
+        className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+      >
+        <option value="ADMIN">ADMIN</option>
+        <option value="EDITOR">EDITOR</option>
+      </select>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-semibold disabled:opacity-50"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
       >
-        {loading ? "بن رہا ہے..." : "ایڈمن اکاؤنٹ رجسٹر کریں"}
+        {loading ? "Creating..." : "Create Admin"}
       </button>
 
       {msg && (
-        <div className={`text-center p-2 rounded ${msg.includes("کامیابی") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+        <div
+          className={`text-center mt-2 ${
+            msg.startsWith("Created") ? "text-green-600" : "text-red-600"
+          }`}
+        >
           {msg}
         </div>
       )}

@@ -1,9 +1,21 @@
+import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth/next";
 
 export async function POST(req) {
   try {
-    // عارضی طور پر سیشن چیک کو ہٹا دیا گیا ہے تاکہ پہلا ایڈمن بن سکے
+    // Get current logged-in session
+    const session = await getServerSession(authOptions);
+
+    // Only SUPER_ADMIN can create new admins
+    if (!session || session.user.role !== "SUPER_ADMIN") {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Only SUPER_ADMIN can create admins" }),
+        { status: 403 }
+      );
+    }
+
     const { name, email, password, role } = await req.json();
 
     if (!name || !email || !password || !role) {
@@ -24,7 +36,7 @@ export async function POST(req) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await prisma.admin.create({
-      data: { name, email, password: hashedPassword, role: "SUPER_ADMIN" }, // پہلا بندہ خود بخود سپر ایڈمن بنے گا
+      data: { name, email, password: hashedPassword, role },
     });
 
     return new Response(
