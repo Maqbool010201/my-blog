@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import Link from 'next/link';
 
@@ -9,40 +9,59 @@ export default function ImageCompressor() {
   const [preview, setPreview] = useState(null);
   const [output, setOutput] = useState(null);
   const [format, setFormat] = useState('image/webp');
-  const [status, setStatus] = useState('idle'); // idle, selected, processing, done
-  const inputRef = useRef();
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  const isMobile = typeof window !== 'undefined' &&
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+      if (output?.url) URL.revokeObjectURL(output.url);
+    };
+  }, [preview, output]);
 
   const onSelectFile = (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-    setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
     setOutput(null);
+    setError(null);
     setStatus('selected');
+
+    // Safari fix
+    e.target.value = '';
   };
 
   const handleCompression = async () => {
     if (!file) return;
-    setStatus('processing');
 
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-      fileType: format,
-    };
+    setStatus('processing');
+    setError(null);
 
     try {
-      const compressedBlob = await imageCompression(file, options);
-      setOutput({
-        url: URL.createObjectURL(compressedBlob),
-        size: (compressedBlob.size / 1024).toFixed(2),
-        oldSize: (file.size / 1024).toFixed(2),
-        name: file.name.split('.')[0],
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: isMobile ? 1280 : 1920,
+        useWebWorker: !isMobile,
+        fileType: format,
       });
+
+      setOutput({
+        url: URL.createObjectURL(compressed),
+        size: (compressed.size / 1024).toFixed(1),
+        oldSize: (file.size / 1024).toFixed(1),
+        name: file.name.replace(/\.[^/.]+$/, ''),
+      });
+
       setStatus('done');
-    } catch (error) {
-      console.error('Compression Error:', error);
+    } catch (err) {
+      console.error(err);
+      setError('Image compression failed on this device. Try a smaller image.');
       setStatus('selected');
     }
   };
@@ -51,50 +70,46 @@ export default function ImageCompressor() {
     if (!output) return;
     const a = document.createElement('a');
     a.href = output.url;
-    a.download = `${output.name}-compressed.${format.split('/')[1]}`;
+    a.download = `${output.name}.${format.split('/')[1]}`;
     a.click();
-    setStatus('done'); // keep done to show "Upload Another File" link
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-10 space-y-6">
-      
-      {/* Breadcrumbs */}
-      <nav className="text-gray-500 text-sm mb-4">
-        <Link href="/" className="hover:underline">Home</Link> / 
-        <Link href="/tools" className="hover:underline ml-1">Tools</Link> / 
-        <span className="ml-1 text-gray-700 font-semibold">Image Compressor</span>
+    <div className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-5 space-y-5">
+
+      {/* Breadcrumb */}
+      <nav className="text-xs text-gray-500">
+        <Link href="/">Home</Link> / <Link href="/tools">Tools</Link> / Image Compressor
       </nav>
 
-      <h2 className="text-2xl font-bold text-center">Image Compressor Tool</h2>
-      <p className="text-gray-600 text-center">
-        Compress and convert images directly in your browser. Privacy-first, no uploads.
+      <h2 className="text-xl font-bold text-center">Image Compressor</h2>
+      <p className="text-sm text-center text-gray-600">
+        Compress images locally on your device. No uploads.
       </p>
 
-      {/* Choose File Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={() => inputRef.current.click()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
-        >
-          {file ? 'Change File' : 'Choose File'}
-        </button>
-        <input
-          type="file"
-          accept="image/*"
-          ref={inputRef}
-          onChange={onSelectFile}
-          className="hidden"
-        />
-      </div>
+      {/* File Picker */}
+      <button
+        onClick={() => inputRef.current?.click()}
+        className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold active:scale-95"
+      >
+        {file ? 'Change Image' : 'Choose Image'}
+      </button>
 
-      {/* Format selector & Compress button */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={onSelectFile}
+      />
+
+      {/* Controls */}
       {status === 'selected' && (
-        <div className="mt-4 flex flex-col md:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col gap-3">
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border rounded-lg px-3 py-2"
           >
             <option value="image/webp">WebP</option>
             <option value="image/jpeg">JPG</option>
@@ -103,47 +118,45 @@ export default function ImageCompressor() {
 
           <button
             onClick={handleCompression}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
+            className="bg-green-600 text-white py-3 rounded-xl font-semibold"
           >
             Compress Image
           </button>
         </div>
       )}
 
-      {/* Image Preview */}
-      {preview && (
-        <div className="flex justify-center mt-6">
-          <img
-            src={preview}
-            alt="Preview"
-            className="max-h-64 rounded-xl shadow-lg border border-gray-200"
-          />
-        </div>
+      {/* Status */}
+      {status === 'processing' && (
+        <p className="text-center text-sm text-gray-500">Processing image…</p>
       )}
 
-      {/* Output & Download */}
+      {error && (
+        <p className="text-center text-sm text-red-600">{error}</p>
+      )}
+
+      {/* Preview */}
+      {preview && (
+        <img
+          src={preview}
+          alt="Preview"
+          className="w-full max-h-60 object-contain rounded-lg border"
+        />
+      )}
+
+      {/* Output */}
       {output && (
-        <div className="flex flex-col items-center mt-6 gap-3">
-          <div className="flex gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="text-center">
-              <p className="text-sm text-gray-400 uppercase font-bold">Original</p>
-              <p className="font-bold text-gray-700">{output.oldSize} KB</p>
-            </div>
-            <div className="h-8 w-px bg-gray-200"></div>
-            <div className="text-center">
-              <p className="text-sm text-green-400 uppercase font-bold">Compressed</p>
-              <p className="font-bold text-green-600">{output.size} KB</p>
-            </div>
-          </div>
+        <div className="space-y-3 text-center">
+          <p className="text-sm">
+            {output.oldSize} KB → <strong>{output.size} KB</strong>
+          </p>
 
           <button
             onClick={handleDownload}
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
+            className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold"
           >
-            Download Compressed Image
+            Download
           </button>
 
-          {/* Upload Another File */}
           <button
             onClick={() => {
               setFile(null);
@@ -151,9 +164,9 @@ export default function ImageCompressor() {
               setOutput(null);
               setStatus('idle');
             }}
-            className="text-blue-600 font-semibold hover:underline mt-2"
+            className="text-sm text-blue-600 underline"
           >
-            ← Upload another file
+            Upload another image
           </button>
         </div>
       )}

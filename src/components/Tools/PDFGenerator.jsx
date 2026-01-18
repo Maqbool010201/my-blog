@@ -1,48 +1,89 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import Link from "next/link";
 
 export default function PDFGenerator() {
   const [image, setImage] = useState(null);
+  const [imageType, setImageType] = useState("JPEG");
   const [loading, setLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState(null);
-  const inputRef = useRef();
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  /* Cleanup blob URL */
+  useEffect(() => {
+    return () => {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    };
+  }, [downloadUrl]);
 
   const handleImageSelect = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
+    setError(null);
+    setDownloadUrl(null);
+
+    setImageType(file.type.includes("png") ? "PNG" : "JPEG");
+
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImage(reader.result);
-      setDownloadUrl(null);
-      setLoading(false);
-    };
+    reader.onload = () => setImage(reader.result);
     reader.readAsDataURL(file);
+
+    /* Safari reselect fix */
+    e.target.value = "";
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     if (!image) return;
+
     setLoading(true);
+    setError(null);
 
     const img = new Image();
     img.src = image;
-    img.onload = () => {
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(image);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      pdf.addImage(image, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      // Convert PDF to blob URL for download
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-
-      setDownloadUrl(url); // show download button
+    img.onerror = () => {
+      setError("Failed to load image on this device.");
       setLoading(false);
+    };
+
+    img.onload = () => {
+      try {
+        /* Downscale for mobile safety */
+        const MAX_WIDTH = 2000;
+        const ratio = Math.min(1, MAX_WIDTH / img.width);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+
+        const ctx = canvas.getContext("2d", { alpha: false });
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const imgData = canvas.toDataURL(
+          imageType === "PNG" ? "image/png" : "image/jpeg",
+          0.9
+        );
+
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight =
+          (canvas.height * pageWidth) / canvas.width;
+
+        pdf.addImage(imgData, imageType, 0, 0, pageWidth, pageHeight);
+
+        const blob = pdf.output("blob");
+        const url = URL.createObjectURL(blob);
+
+        setDownloadUrl(url);
+        setLoading(false);
+      } catch {
+        setError("PDF generation failed due to memory limits.");
+        setLoading(false);
+      }
     };
   };
 
@@ -54,7 +95,6 @@ export default function PDFGenerator() {
     a.download = "converted-document.pdf";
     a.click();
 
-    // Hide download button after click
     setDownloadUrl(null);
     setImage(null);
   };
@@ -62,8 +102,7 @@ export default function PDFGenerator() {
   return (
     <div className="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-10 space-y-6">
 
-      {/* Breadcrumbs */}
-      <nav className="text-gray-500 text-sm mb-4 flex flex-wrap gap-1">
+      <nav className="text-gray-500 text-sm flex gap-1 flex-wrap">
         <Link href="/" className="hover:underline">Home</Link>
         <span>/</span>
         <Link href="/tools" className="hover:underline">Tools</Link>
@@ -73,60 +112,53 @@ export default function PDFGenerator() {
 
       <h2 className="text-2xl font-bold text-center">Image to PDF Converter</h2>
       <p className="text-gray-600 text-center">
-        Convert your images to PDF instantly in your browser. Fully private, no uploads.
+        Convert images to PDF directly on your device.
       </p>
 
-      {/* Choose File Button */}
       <div className="flex justify-center">
         <button
-          onClick={() => inputRef.current.click()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
+          onClick={() => inputRef.current?.click()}
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold"
         >
           {image ? "Change Image" : "Choose Image"}
         </button>
         <input
-          type="file"
-          accept="image/*"
           ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png"
           onChange={handleImageSelect}
           className="hidden"
         />
       </div>
 
-      {/* Image Preview */}
       {image && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <img
             src={image}
             alt="Preview"
-            className="max-h-64 w-auto rounded-xl shadow-lg border border-gray-200 object-contain"
+            className="max-h-64 rounded-xl border object-contain"
           />
         </div>
       )}
 
-      {/* Generate / Download Button */}
+      {error && (
+        <p className="text-center text-sm text-red-600">{error}</p>
+      )}
+
       {image && (
-        <div className="flex justify-center mt-4 gap-4 flex-wrap">
-          {!downloadUrl && (
+        <div className="flex justify-center">
+          {!downloadUrl ? (
             <button
               onClick={generatePDF}
               disabled={loading}
-              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold disabled:opacity-50"
             >
-              {loading && (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
-              )}
-              {loading ? "Generating PDF..." : "Generate PDF"}
+              {loading ? "Generating PDF…" : "Generate PDF"}
             </button>
-          )}
-
-          {downloadUrl && (
+          ) : (
             <button
               onClick={handleDownload}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform active:scale-95"
+              className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold"
             >
               Download PDF
             </button>

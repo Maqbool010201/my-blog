@@ -1,62 +1,116 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function ImageResizer() {
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [outputUrl, setOutputUrl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [downloaded, setDownloaded] = useState(false);
-  const inputRef = useRef();
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
 
+  const isMobile =
+    typeof window !== 'undefined' &&
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  /* Cleanup blob URLs */
+  useEffect(() => {
+    return () => {
+      if (outputUrl) URL.revokeObjectURL(outputUrl);
+    };
+  }, [outputUrl]);
+
+  /* File select */
   const handleFileSelect = (e) => {
-    const selected = e.target.files[0];
+    const selected = e.target.files?.[0];
     if (!selected) return;
+
     setFile(selected);
+    setWidth('');
+    setHeight('');
     setOutputUrl(null);
-    setDownloaded(false);
+    setError(null);
+
+    /* Mobile-safe preview using FileReader */
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result);
+    reader.readAsDataURL(selected);
+
+    /* Safari fix */
+    e.target.value = '';
   };
 
-  const handleResize = () => {
+  /* Resize logic */
+  const handleResize = async () => {
     if (!file || !width || !height) return;
 
+    const w = Number(width);
+    const h = Number(height);
+
+    if (w > 4000 || h > 4000) {
+      setError('Dimensions too large for mobile devices.');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    img.src = preview;
+
+    img.onerror = () => {
+      setError('Failed to load image on this device.');
+      setLoading(false);
+    };
 
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = Number(width);
-      canvas.height = Number(height);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
 
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
 
-      canvas.toBlob((blob) => {
-        setOutputUrl(URL.createObjectURL(blob));
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              setError('Image processing failed.');
+              setLoading(false);
+              return;
+            }
+            setOutputUrl(URL.createObjectURL(blob));
+            setLoading(false);
+          },
+          'image/webp',
+          0.9
+        );
+      } catch {
+        setError('Resize failed due to low memory.');
         setLoading(false);
-        setDownloaded(false);
-      }, 'image/webp', 0.9);
+      }
     };
   };
 
+  /* Download */
   const handleDownload = () => {
     if (!outputUrl) return;
     const a = document.createElement('a');
     a.href = outputUrl;
     a.download = 'resized-image.webp';
     a.click();
-    setDownloaded(true);
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-10 space-y-6">
-      
-      {/* Breadcrumbs */}
-      <nav className="text-gray-500 text-sm mb-4 flex flex-wrap gap-1">
+
+      {/* Breadcrumb */}
+      <nav className="text-gray-500 text-sm flex gap-1 flex-wrap">
         <Link href="/" className="hover:underline">Home</Link>
         <span>/</span>
         <Link href="/tools" className="hover:underline">Tools</Link>
@@ -66,95 +120,84 @@ export default function ImageResizer() {
 
       <h2 className="text-2xl font-bold text-center">Image Resizer Tool</h2>
       <p className="text-gray-600 text-center">
-        Resize images to any width and height instantly in your browser. No uploads, fully private.
+        Resize images directly on your device. No uploads.
       </p>
 
-      {/* Choose File Button */}
+      {/* File Picker */}
       <div className="flex justify-center">
         <button
-          onClick={() => inputRef.current.click()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
+          onClick={() => inputRef.current?.click()}
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold active:scale-95"
         >
-          {file ? 'Change File' : 'Choose File'}
+          {file ? 'Change Image' : 'Choose Image'}
         </button>
         <input
-          type="file"
-          accept="image/*"
           ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
           onChange={handleFileSelect}
           className="hidden"
         />
       </div>
 
-      {/* Dimension Inputs */}
+      {/* Inputs */}
       {file && (
-        <div className="flex flex-col md:flex-row gap-4 w-full justify-center mt-4">
+        <div className="flex flex-col md:flex-row gap-4 justify-center">
           <input
             type="number"
             placeholder="Width (px)"
             value={width}
             onChange={(e) => setWidth(e.target.value)}
-            className="w-full md:w-32 border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border rounded-xl px-4 py-2 w-full md:w-32"
           />
           <input
             type="number"
             placeholder="Height (px)"
             value={height}
             onChange={(e) => setHeight(e.target.value)}
-            className="w-full md:w-32 border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border rounded-xl px-4 py-2 w-full md:w-32"
           />
         </div>
       )}
 
-      {/* Resize Button */}
+      {/* Resize */}
       {file && (
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center">
           <button
             onClick={handleResize}
-            disabled={loading || !width || !height}
-            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
+            disabled={loading}
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold disabled:opacity-50"
           >
-            {loading ? 'Resizing...' : 'Resize Image'}
+            {loading ? 'Resizing…' : 'Resize Image'}
           </button>
         </div>
       )}
 
-      {/* Image Preview */}
-      {file && (
-        <div className="flex justify-center mt-6">
+      {/* Error */}
+      {error && (
+        <p className="text-center text-sm text-red-600">{error}</p>
+      )}
+
+      {/* Preview */}
+      {preview && (
+        <div className="flex justify-center">
           <img
-            src={outputUrl || URL.createObjectURL(file)}
+            src={outputUrl || preview}
             alt="Preview"
-            className="max-h-64 rounded-xl shadow-lg border border-gray-200"
+            className="max-h-64 w-auto rounded-xl border"
           />
         </div>
       )}
 
-      {/* Download Button */}
+      {/* Download */}
       {outputUrl && (
-        <div className="flex flex-col items-center mt-6 gap-3">
+        <div className="flex justify-center">
           <button
             onClick={handleDownload}
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95"
+            className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold"
           >
-            Download Resized Image
+            Download Image
           </button>
-
-          {/* Upload Another File */}
-          {downloaded && (
-            <button
-              onClick={() => {
-                setFile(null);
-                setWidth('');
-                setHeight('');
-                setOutputUrl(null);
-                setDownloaded(false);
-              }}
-              className="text-blue-600 font-semibold hover:underline mt-2"
-            >
-              ← Upload another file
-            </button>
-          )}
         </div>
       )}
     </div>
