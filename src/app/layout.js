@@ -4,13 +4,13 @@ import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
 
-// Performance Fix: Dynamic کو ہٹا کر ISR استعمال کرنا بہتر ہے تاکہ TTFB کم ہو
-export const dynamic = 'force-dynamic';
+// اسپیڈ کے لیے: اگر ڈیٹا ہر گھنٹے بعد بھی اپڈیٹ ہو تو 3600 کافی ہے
+export const revalidate = 3600; 
 
 const geistSans = Geist({ 
   variable: '--font-geist-sans', 
   subsets: ['latin'], 
-  display: 'swap' 
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({ 
@@ -50,18 +50,9 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <head>
-        {/* LCP Optimization: براؤزر کو بتائیں کہ یہ تصویر سب سے پہلے اٹھائے */}
-        <link 
-          rel="preload" 
-          as="image" 
-          href="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-750" 
-          fetchPriority="high"
-        />
-      </head>
+      {/* ہم نے یہاں سے پری لوڈ لنک ہٹا دیا ہے تاکہ LCP Delay ختم ہو سکے */}
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers>
-          {/* Menu کو categories پاس ہو رہی ہیں، یہ ٹھیک ہے */}
           <Menu categories={categories} />
           <main className="grow w-full">
             {children}
