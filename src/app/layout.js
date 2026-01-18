@@ -4,7 +4,7 @@ import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
 
-// بلڈ ٹائم ٹائم آؤٹ سے بچنے کے لیے ضروری لائن
+// Performance Fix: Dynamic کو ہٹا کر ISR استعمال کرنا بہتر ہے تاکہ TTFB کم ہو
 export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({ 
@@ -31,7 +31,7 @@ export const metadata = {
 
 async function getCategories() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!baseUrl) return []; // بلڈ کے دوران اے پی آئی کال سے بچنے کے لیے
+  if (!baseUrl) return [];
 
   try {
     const res = await fetch(`${baseUrl}/api/categories`, { 
@@ -50,10 +50,20 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
+      <head>
+        {/* LCP Optimization: براؤزر کو بتائیں کہ یہ تصویر سب سے پہلے اٹھائے */}
+        <link 
+          rel="preload" 
+          as="image" 
+          href="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-750" 
+          fetchPriority="high"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers>
+          {/* Menu کو categories پاس ہو رہی ہیں، یہ ٹھیک ہے */}
           <Menu categories={categories} />
-          <main className="flex-grow w-full">
+          <main className="grow w-full">
             {children}
           </main>
           <Footer />
