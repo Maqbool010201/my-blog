@@ -1,8 +1,7 @@
 import Image from 'next/image';
 
 export default function StaticHero() {
-  // چونکہ آپ نے Custom Loader لگایا ہوا ہے، اس لیے صرف فائل کا نام/پاتھ دیں
-  // لوڈر خود ہی "https://ik.imagekit.io/ag0dicbdub/" اور "w=1000,q-80" لگا دے گا
+  // ImageKit path (Custom Loader will handle the rest)
   const heroImageUrl = "uploads/hero6.webp"; 
 
   return (
@@ -13,13 +12,16 @@ export default function StaticHero() {
         src={heroImageUrl}
         alt="Wise Mix Media Hero Background"
         fill 
-        priority 
+        priority // Required for LCP
+        fetchPriority="high" // یہ براؤزر کو بتائے گا کہ اسے فوراً ڈاؤن لوڈ کرنا ہے (Lighthouse Fix)
+        loading="eager"      // سست روی (Lazy load) کو روکنے کے لیے
+        decoding="sync"      // امیج کو فوری رینڈر کرنے کے لیے
         sizes="100vw"
         className="object-cover object-top md:object-center opacity-80"
       />
 
-      {/* Gradient Overlay: Accessibility بہتر کرنے کے لیے opacity تھوڑی بڑھا دی ہے */}
-      <div className="absolute inset-0 bg-linear-to-b from-black/75 via-transparent to-black/80 md:bg-linear-to-r md:from-white/95 md:via-white/60 md:to-transparent z-1" />
+      {/* Gradient Overlay: Accessibility بہتر کرنے کے لیے ڈارک کنٹراسٹ بڑھا دیا ہے */}
+      <div className="absolute inset-0 bg-linear-to-b from-black/85 via-transparent to-black/90 md:bg-linear-to-r md:from-white/95 md:via-white/60 md:to-transparent z-1" />
 
       {/* Hero Content */}
       <div className="relative z-10 container mx-auto h-full px-6 flex items-center justify-center md:justify-start">
@@ -40,7 +42,7 @@ export default function StaticHero() {
           </p>
 
           <div className="mt-8">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105 cursor-pointer">
               Read Articles
             </button>
           </div>
