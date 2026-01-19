@@ -1,4 +1,3 @@
-// app/page.js
 import { Suspense } from "react";
 import StaticHero from "@/components/Hero/StaticHero";
 import FeaturedPosts from "@/components/FeaturedPosts/FeaturedPosts";
@@ -9,7 +8,6 @@ import Advertisement from "@/components/Advertisement/Advertisement";
 export default async function HomePage({ searchParams }) {
   const params = await searchParams;
   const pageNumber = Number(params.page) || 1;
-
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
   let adsByPosition = {};
@@ -31,29 +29,27 @@ export default async function HomePage({ searchParams }) {
       {/* HERO */}
       <StaticHero />
 
-      {/* TOP AD */}
-      <div className="container mx-auto px-4 mt-6 min-h-[120px]">
-        {adsByPosition["content-top"] ? (
-          <Advertisement adData={adsByPosition["content-top"]} />
-        ) : (
-          <div className="w-full h-full" />
-        )}
+      {/* TOP AD - موبائل پر مارجن کم (mt-2) اور اگر ایڈ نہیں ہے تو ہائٹ زیرو */}
+      {adsByPosition["content-top"] && (
+        <div className="container mx-auto px-4 mt-2 md:mt-6 min-h-[50px] md:min-h-[120px]">
+           <Advertisement adData={adsByPosition["content-top"]} />
+        </div>
+      )}
+
+      {/* FEATURED POSTS - موبائل پر پیڈنگ سیٹ کی */}
+      <div className="mt-4 md:mt-0">
+        <Suspense fallback={<div className="min-h-[200px]"></div>}>
+          <FeaturedPosts />
+        </Suspense>
       </div>
 
-      {/* FEATURED POSTS */}
-      <Suspense fallback={<div className="min-h-[300px]"></div>}>
-        <FeaturedPosts />
-      </Suspense>
-
       <section className="container mx-auto px-4">
-        {/* MIDDLE AD */}
-        <div className="w-full min-h-[120px] my-8 flex justify-center">
-          {adsByPosition["content-middle"] ? (
+        {/* MIDDLE AD - یہاں بھی کنڈیشن لگا دی تاکہ خالی جگہ نہ رہے */}
+        {adsByPosition["content-middle"] && (
+          <div className="w-full min-h-[50px] md:min-h-[120px] my-4 md:my-8 flex justify-center">
             <Advertisement adData={adsByPosition["content-middle"]} />
-          ) : (
-            <div className="w-full h-full" />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* LATEST POSTS + SIDEBAR */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -64,13 +60,11 @@ export default async function HomePage({ searchParams }) {
         </div>
 
         {/* BOTTOM AD */}
-        <div className="w-full min-h-[120px] my-8 flex justify-center">
-          {adsByPosition["content-bottom"] ? (
+        {adsByPosition["content-bottom"] && (
+          <div className="w-full min-h-[50px] md:min-h-[120px] my-4 md:my-8 flex justify-center">
             <Advertisement adData={adsByPosition["content-bottom"]} />
-          ) : (
-            <div className="w-full h-full" />
-          )}
-        </div>
+          </div>
+        )}
       </section>
     </div>
   );
