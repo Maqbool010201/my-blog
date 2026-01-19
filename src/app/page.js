@@ -7,8 +7,8 @@ import Advertisement from '@/components/Advertisement/Advertisement';
 
 export default async function HomePage(props) {
   // 1. سب سے اہم فکس: props کو پہلے چیک کریں پھر await کریں
-  const searchParams = props?.searchParams ? await props.searchParams : {};
-  const pageNumber = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const searchParams = await (props?.searchParams || {});
+  const pageNumber = Number(searchParams.page) || 1;
 
   // 2. Base URL (Vercel کے لیے مکمل ایڈریس)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.wisemixmedia.com';
