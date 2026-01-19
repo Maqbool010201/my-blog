@@ -1,44 +1,49 @@
 import Image from 'next/image';
 
 export default function StaticHero() {
-  // Public folder path
-  const heroImageUrl = "/hero6.png"; 
+  const heroImageUrl = "uploads/hero6.png"; 
 
   return (
-    <section className="relative w-full h-[35vh] sm:h-[500px] lg:h-[650px] overflow-hidden bg-blue-950">
+    // UPDATED: Added h-[35vh] for mobile (roughly one-third) and kept your larger heights for desktop
+    <section className="relative w-full h-[35vh] sm:h-125 lg:h-162.5 overflow-hidden bg-slate-900">
       
       <Image
         src={heroImageUrl}
         alt="Wise Mix Media Hero Background"
         fill 
         priority 
-        /* یہ لائن لازمی ہے تاکہ امیج کٹ لوڈر اسے اگنور کرے */
-        loader={({ src }) => src} 
         fetchPriority="high"
-        className="object-cover object-center opacity-90"
+        loading="eager"      
+        decoding="sync"      
+        sizes="100vw"
+        className="object-cover object-top md:object-center opacity-80"
       />
 
-      {/* Overlay - امیج کے رنگوں سے میچ کرتا ہوا */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-900/60 via-transparent to-blue-950/80 md:bg-gradient-to-r md:from-blue-950/90 md:via-blue-900/40 md:to-transparent z-1" />
+      <div className="absolute inset-0 bg-linear-to-b from-black/85 via-transparent to-black/90 md:bg-linear-to-r md:from-white/95 md:via-white/60 md:to-transparent z-1" />
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto h-full px-6 flex items-center justify-center md:justify-start text-white">
-        <div className="max-w-4xl text-center md:text-left">
-          <span className="hidden sm:inline-block mb-4 text-xs font-bold tracking-[0.3em] uppercase text-blue-300">
+      <div className="relative z-10 container mx-auto h-full px-6 flex items-center justify-center md:justify-start">
+        <div className="max-w-4xl text-center md:text-left text-white md:text-slate-900">
+          
+          {/* UPDATED: Hidden on mobile to save vertical space */}
+          <span className="hidden md:inline-block mb-3 text-sm font-bold tracking-[0.2em] uppercase text-blue-600">
             Trusted Digital Media Platform
           </span>
 
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight">
+          {/* UPDATED: Reduced text size on mobile (text-2xl) so it doesn't crowd the 33vh height */}
+          <h1 className="text-2xl sm:text-5xl md:text-7xl font-black leading-[1.1] tracking-tight">
             Insightful Content.<br className="hidden md:block" />
-            <span className="text-blue-400"> Curated for Growth.</span>
+            <span className="text-blue-400 md:text-blue-600"> Curated for Growth.</span>
           </h1>
 
-          <p className="hidden md:block mt-6 text-base md:text-xl text-blue-100/90 leading-relaxed max-w-2xl font-medium">
+          {/* UPDATED: Hidden on mobile (hidden md:block) as per recommendation */}
+          <p className="hidden md:block mt-6 text-base md:text-xl text-slate-600 leading-relaxed max-w-2xl font-medium">
             Explore expert-written articles across technology, business, and lifestyle. 
+            Wise Mix Media delivers clarity, depth, and value.
           </p>
 
-          <div className="mt-6 md:mt-10">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full text-sm md:text-lg font-bold shadow-xl shadow-blue-500/20 transition-all transform hover:scale-105 active:scale-95">
+          {/* UPDATED: Scaled down button slightly for mobile */}
+          <div className="mt-4 md:mt-8">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 md:px-8 md:py-3 rounded-full text-sm md:text-base font-bold transition-all transform hover:scale-105 cursor-pointer">
               Read Articles
             </button>
           </div>
