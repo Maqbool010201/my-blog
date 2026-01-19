@@ -4,7 +4,6 @@ import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
 
-// Performance Fix: Dynamic کو ہٹا کر ISR استعمال کرنا بہتر ہے تاکہ TTFB کم ہو
 export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({ 
@@ -19,6 +18,7 @@ const geistMono = Geist_Mono({
   display: 'swap' 
 });
 
+// یہاں ہم نے verification شامل کی ہے
 export const metadata = {
   title: {
     default: 'Wise Mix Media | Insightful Content for Growth',
@@ -27,6 +27,9 @@ export const metadata = {
   description: 'Explore expert-written articles across technology, business, and lifestyle.',
   authors: [{ name: 'Maqbool' }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  verification: {
+    google: 'E3wAaKlxb0PSG-ooGjBa6CHOnp7RG8tJSC7IJYIsJ_Y',
+  },
 };
 
 async function getCategories() {
@@ -51,7 +54,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* LCP Optimization: براؤزر کو بتائیں کہ یہ تصویر سب سے پہلے اٹھائے */}
         <link 
           rel="preload" 
           as="image" 
@@ -61,7 +63,6 @@ export default async function RootLayout({ children }) {
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers>
-          {/* Menu کو categories پاس ہو رہی ہیں، یہ ٹھیک ہے */}
           <Menu categories={categories} />
           <main className="grow w-full">
             {children}
