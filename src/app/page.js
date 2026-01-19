@@ -1,57 +1,83 @@
-import { Suspense } from "react";
-import StaticHero from "@/components/Hero/StaticHero";
-import FeaturedPosts from "@/components/FeaturedPosts/FeaturedPosts";
-import LatestPosts from "@/components/LatestPosts/LatestPosts";
-import Sidebar from "@/components/Sidebar/Sidebar";
-import Advertisement from "@/components/Advertisement/Advertisement";
+// app/page.js
+import { Suspense } from 'react';
+import StaticHero from '@/components/Hero/StaticHero';
+import FeaturedPosts from '@/components/FeaturedPosts/FeaturedPosts';
+import LatestPosts from '@/components/LatestPosts/LatestPosts';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import Advertisement from '@/components/Advertisement/Advertisement';
 
 export default async function HomePage(props) {
-  // فکس: searchParams کو محفوظ طریقے سے نکالنا
-  const searchParams = await props?.searchParams;
-  const pageNumber = searchParams?.page ? Number(searchParams.page) : 1;
+  const searchParams = await props.searchParams;
+  // Safely get page number from searchParams
+  const pageNumber = parseInt(searchParams?.page || '1', 10);
 
-  const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.wisemixmedia.com";
-  const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+  // Base URL for API
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-  let adsByPosition = {};
+  // Fetch advertisements
+  let ads = [];
   try {
     const res = await fetch(
       `${baseUrl}/api/advertisements?pageType=home&isActive=true`,
-      { cache: "no-store" }
+      { cache: 'no-store' }
     );
+
     if (res.ok) {
-      const ads = await res.json();
-      ads.forEach((ad) => {
-        adsByPosition[ad.position] = ad;
-      });
+      ads = await res.json();
+    } else {
+      console.warn('Failed to fetch ads:', res.status);
     }
   } catch (err) {
-    console.error("Ad fetch error ignored");
+    console.error('Error fetching ads:', err);
   }
 
+  // Organize ads by position
+  const adsByPosition = {};
+  ads.forEach(ad => {
+    if (ad.position) adsByPosition[ad.position] = ad;
+  });
+
   return (
-    <div className="bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen">
+      {/* Hero Section */}
       <StaticHero />
-      
-      {adsByPosition["content-top"] && (
-        <div className="container mx-auto px-4 mt-2">
-          <Advertisement adData={adsByPosition["content-top"]} />
+
+      {/* Content Top Ad */}
+      {adsByPosition['content-top'] && (
+        <div className="container mx-auto px-4 mt-6">
+          <Advertisement adData={adsByPosition['content-top']} />
         </div>
       )}
 
-      <Suspense fallback={<div className="h-40 bg-gray-100 animate-pulse" />}>
+      {/* Featured Posts */}
+      <Suspense fallback={null}>
         <FeaturedPosts />
       </Suspense>
 
-      <section className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
-        <div className="lg:col-span-3">
-          <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse" />}>
+      <section className="container mx-auto px-4 mt-8">
+        {/* Content Middle Ad */}
+        {adsByPosition['content-middle'] && (
+          <Advertisement
+            adData={adsByPosition['content-middle']}
+            className="my-8"
+          />
+        )}
+
+        {/* Latest Posts + Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
             <LatestPosts page={pageNumber} />
-          </Suspense>
-        </div>
-        <aside className="lg:col-span-1">
+          </div>
           <Sidebar />
-        </aside>
+        </div>
+
+        {/* Content Bottom Ad */}
+        {adsByPosition['content-bottom'] && (
+          <Advertisement
+            adData={adsByPosition['content-bottom']}
+            className="my-8"
+          />
+        )}
       </section>
     </div>
   );
