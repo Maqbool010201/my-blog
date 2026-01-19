@@ -2,12 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 
+export const revalidate = 300;
+
 export default async function FeaturedPosts({ excludeIds = [] }) {
   const posts = await prisma.post.findMany({
     where: {
       featured: true,
       published: true,
-      id: excludeIds.length ? { notIn: excludeIds } : undefined,
+      ...(excludeIds.length && {
+        id: { notIn: excludeIds },
+      }),
     },
     include: { category: true },
     orderBy: { createdAt: "desc" },
@@ -29,9 +33,8 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
 
       <div className="container mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {posts.map((post, index) => {
-          console.log(`Debug Post ID: ${post.id}, Title: ${post.title}, Image: ${post.mainImage}`);
           const imageSrc =
-            post.mainImage && post.mainImage.trim() !== ""
+            post.mainImage?.trim()
               ? post.mainImage.startsWith("http")
                 ? post.mainImage
                 : post.mainImage.startsWith("/")
@@ -42,23 +45,19 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
           return (
             <Link key={post.id} href={`/blog/${post.slug}`} prefetch={false}>
               <article className="relative h-[340px] rounded-xl overflow-hidden shadow-lg bg-gray-50 group flex flex-col">
-
-                {/* IMAGE SLOT */}
+                
                 <div className="relative w-full h-[210px] bg-gray-200">
                   <Image
                     src={imageSrc}
                     alt={post.title}
                     fill
-                    // FIX: Only the first 2-4 images should have priority to help LCP
-                    // without overloading the browser
-                    priority={index < 4}
+                    priority={index < 2}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 </div>
 
-                {/* TEXT */}
                 <div className="flex flex-col justify-between p-4 flex-grow">
                   <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full w-fit">
                     {post.category?.name || "Uncategorized"}
@@ -69,7 +68,6 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
                   </h3>
                 </div>
 
-                {/* BADGE */}
                 <span className="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
                   Featured
                 </span>
