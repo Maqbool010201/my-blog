@@ -3,63 +3,68 @@ import { useState, useEffect } from 'react';
 
 export default function Advertisement({ page, position, adData, pageSlug, className = "" }) {
   const [ad, setAd] = useState(adData || null);
-  const [isLoading, setIsLoading] = useState(!adData);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false); // To ensure we don't unload it once loaded
 
   useEffect(() => {
-    if (adData) {
-        setAd(adData);
-        setIsLoading(false);
-        return;
+    if (!adData && page && position && isVisible && !hasLoaded) {
+      // Add pageSlug to the query parameters
+      const url = `/api/advertisements?pageType=${page}&position=${position}&isActive=true${pageSlug ? `&pageSlug=${pageSlug}` : ''}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setAd(data[0]);
+            setHasLoaded(true);
+          }
+        })
+        .catch(() => setAd(null));
     }
-    
-    if (!page || !position) return;
+  }, [adData, page, position, pageSlug, isVisible, hasLoaded]);
 
-    const fetchAd = async () => {
-      try {
-        const url = `/api/advertisements?pageType=${page}&position=${position}&isActive=true${pageSlug ? `&pageSlug=${pageSlug}` : ''}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        setAd(Array.isArray(data) && data.length > 0 ? data[0] : null);
-      } catch (error) {
-        console.error("Ad loading failed:", error);
-        setAd(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // If adData is provided directly (SSR), we still might want to defer rendering the HTML if it has scripts,
+  // but for CLS reasons, we often render immediately. 
+  // However, for high TBT, deferring script execution is key.
+  useEffect(() => {
+    if (adData) setHasLoaded(true);
+  }, [adData]);
 
-    fetchAd();
-  }, [adData, page, position, pageSlug]);
+  // Intersection Observer to detect visibility
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" } // Load 200px before it comes into view
+    );
 
-  // فکس: لوڈنگ کے دوران ہائٹ کو کم سے کم رکھیں تاکہ ہیرو کے نیچے فالتو جگہ نہ بنے
-  if (isLoading) {
-    return <div className={`ad-placeholder min-h-[10px] md:min-h-[100px] bg-transparent ${className}`} />;
-  }
+    const el = document.getElementById(`ad-${page}-${position}`);
+    if (el) observer.observe(el);
 
-  // اگر اشتہار نہیں ہے تو مکمل null واپس کریں تاکہ جگہ خالی ہو جائے
-  if (!ad) return null;
+    return () => observer.disconnect();
+  }, [page, position]);
+
+  // Determine if we have content to show
+  const showContent = (isVisible || adData) && ad;
 
   return (
-    <div className={`ad-wrapper overflow-hidden flex justify-center w-full ${className}`}>
-      {ad.linkUrl ? (
-        <a 
-          href={ad.linkUrl} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="block w-full max-w-full"
-        >
-          {/* ایڈ کا مواد: ہم نے اضافی مارجن ہٹا دیے ہیں */}
-          <div 
-            className="ad-content shadow-sm hover:shadow-md transition-shadow mx-auto"
-            dangerouslySetInnerHTML={{ __html: ad.html }} 
-          />
-        </a>
-      ) : (
-        <div 
-          className="ad-content mx-auto"
-          dangerouslySetInnerHTML={{ __html: ad.html }} 
-        />
+    <div
+      id={`ad-${page}-${position}`}
+      className={`${className} ${showContent ? 'ad-wrapper min-h-[50px]' : 'ad-placeholder'}`}
+      style={!showContent ? { minHeight: '1px' } : undefined}
+    >
+      {showContent && (
+        ad.linkUrl ? (
+          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
+            <div dangerouslySetInnerHTML={{ __html: ad.html }} />
+          </a>
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: ad.html }} />
+        )
       )}
     </div>
   );

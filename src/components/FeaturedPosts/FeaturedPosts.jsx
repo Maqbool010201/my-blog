@@ -1,6 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import IKImage from "@/components/IKImage"; // ہمارا نیا کلائنٹ امیج کمپوننٹ
 
 export default async function FeaturedPosts({ excludeIds = [] }) {
   const posts = await prisma.post.findMany({
@@ -29,31 +29,36 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
 
       <div className="container mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {posts.map((post, index) => {
-          // امیج پاتھ کو درست کرنا
+          console.log(`Debug Post ID: ${post.id}, Title: ${post.title}, Image: ${post.mainImage}`);
           const imageSrc =
             post.mainImage && post.mainImage.trim() !== ""
-              ? post.mainImage.startsWith('/') ? post.mainImage : `/${post.mainImage}`
-              : "/images/blog/placeholder.jpg";
+              ? post.mainImage.startsWith("http")
+                ? post.mainImage
+                : post.mainImage.startsWith("/")
+                  ? post.mainImage
+                  : `/${post.mainImage}`
+              : "/images/blog/placeholder.svg";
 
           return (
             <Link key={post.id} href={`/blog/${post.slug}`} prefetch={false}>
-              <article className="relative h-[340px] rounded-xl overflow-hidden shadow-lg bg-gray-50 group flex flex-col border border-gray-100">
+              <article className="relative h-[340px] rounded-xl overflow-hidden shadow-lg bg-gray-50 group flex flex-col">
 
-                {/* IMAGE SLOT - Using IKImage for Performance */}
+                {/* IMAGE SLOT */}
                 <div className="relative w-full h-[210px] bg-gray-200">
-                  <IKImage
+                  <Image
                     src={imageSrc}
                     alt={post.title}
                     fill
-                    // پہلے 4 امیجز کو ترجیح دیں تاکہ LCP سکور اچھا رہے
-                    priority={index < 4} 
+                    // FIX: Only the first 2-4 images should have priority to help LCP
+                    // without overloading the browser
+                    priority={index < 4}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 </div>
 
-                {/* TEXT CONTENT - Server Rendered for SEO */}
+                {/* TEXT */}
                 <div className="flex flex-col justify-between p-4 flex-grow">
                   <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full w-fit">
                     {post.category?.name || "Uncategorized"}
@@ -64,8 +69,8 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
                   </h3>
                 </div>
 
-                {/* FEATURED BADGE */}
-                <span className="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">
+                {/* BADGE */}
+                <span className="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
                   Featured
                 </span>
               </article>

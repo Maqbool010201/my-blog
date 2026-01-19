@@ -1,7 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import Pagination from "@/components/Pagination/Pagination";
 import prisma from "@/lib/prisma";
-import IKImage from "@/components/IKImage"; // امیج کٹ کلائنٹ کمپوننٹ
 
 const POSTS_PER_PAGE = 6;
 
@@ -63,11 +63,19 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
               className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full"
             >
               <Link href={`/blog/${post.slug}`}>
+                {/* FIXED HEIGHT IMAGE CONTAINER for CLS-free */}
                 <div className="relative w-full h-48 shrink-0 bg-gray-100">
-                  {/* یہاں ہم IKImage استعمال کر رہے ہیں */}
-                  <IKImage
-                    src={post.mainImage || "/images/blog/placeholder.jpg"}
-                    alt={`Cover for ${post.title}`}
+                  <Image
+                    src={
+                      post.mainImage && post.mainImage.trim() !== ""
+                        ? post.mainImage.startsWith("http")
+                          ? post.mainImage
+                          : post.mainImage.startsWith("/")
+                            ? post.mainImage
+                            : `/${post.mainImage}`
+                        : "/images/blog/placeholder.svg"
+                    }
+                    alt={post.title || "Blog post"}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -76,7 +84,8 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
                   />
                 </div>
 
-                <div className="p-4 flex flex-col grow">
+                {/* FIXED MIN-HEIGHT TEXT BLOCK to prevent CLS */}
+                <div className="p-4 flex flex-col grow min-h-[140px]">
                   <time
                     className="text-xs text-gray-500 mb-2"
                     dateTime={new Date(post.createdAt).toISOString()}
