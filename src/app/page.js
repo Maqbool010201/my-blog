@@ -4,9 +4,9 @@ import FeaturedPosts from "@/components/FeaturedPosts/FeaturedPosts";
 import LatestPosts from "@/components/LatestPosts/LatestPosts";
 import Sidebar from "@/components/Sidebar/Sidebar";
 
-export default function HomePage({ searchParams = {} }) {
-  // ✅ searchParams is now ALWAYS defined
-  const pageNumber = Number(searchParams.page ?? 1);
+export default async function HomePage({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const pageNumber = Number(resolvedSearchParams?.page ?? 1);
 
   return (
     <div className="bg-gray-50 overflow-x-hidden">
