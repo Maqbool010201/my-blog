@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // turbopack ہٹا دیا گیا ہے کیونکہ یہ ورژن 15 میں سپورٹڈ نہیں ہے
-  
+  // تصاویر کی سیٹنگز (ImageKit اور فارمیٹس)
   images: {
     loader: 'custom',
     loaderFile: './src/lib/imagekitLoader.js',
@@ -19,10 +18,11 @@ const nextConfig = {
     ],
   },
 
+  // ڈیٹا کمپریشن (سائٹ اسپیڈ کے لیے)
   compress: true,
 
+  // پیکجز کو آپٹمائز کرنا
   experimental: {
-    // optimizeCss کو فی الحال ہٹا دیا ہے کیونکہ یہ بلڈ میں کبھی کبھی مسئلہ کرتا ہے
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
@@ -31,10 +31,12 @@ const nextConfig = {
     ],
   },
 
+  // پروڈکشن میں کنسول لاگز ہٹانا
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
+  // کیشنگ اور سیکیورٹی ہیڈرز (اپ لوڈز اور API کے لیے)
   async headers() {
     return [
       {
@@ -81,4 +83,5 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// یہ لائن سب سے اہم ہے (CommonJS format)
+module.exports = nextConfig;
