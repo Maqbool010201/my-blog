@@ -1,4 +1,3 @@
-// app/page.js
 import { Suspense } from 'react';
 import StaticHero from '@/components/Hero/StaticHero';
 import FeaturedPosts from '@/components/FeaturedPosts/FeaturedPosts';
@@ -7,77 +6,35 @@ import Sidebar from '@/components/Sidebar/Sidebar';
 import Advertisement from '@/components/Advertisement/Advertisement';
 
 export default async function HomePage(props) {
-  const searchParams = await props.searchParams;
-  // Safely get page number from searchParams
-  const pageNumber = parseInt(searchParams?.page || '1', 10);
+  // Next.js 15 کے لیے سب سے محفوظ طریقہ
+  const searchParams = props?.searchParams ? await props.searchParams : {};
+  
+  // یہاں چیک کریں: اگر page موجود نہیں تو 1 ورنہ اس کی ویلیو
+  const pageNumber = searchParams?.page ? parseInt(searchParams.page, 10) : 1;
 
-  // Base URL for API
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
-  // Fetch advertisements
-  let ads = [];
-  try {
-    const res = await fetch(
-      `${baseUrl}/api/advertisements?pageType=home&isActive=true`,
-      { cache: 'no-store' }
-    );
-
-    if (res.ok) {
-      ads = await res.json();
-    } else {
-      console.warn('Failed to fetch ads:', res.status);
-    }
-  } catch (err) {
-    console.error('Error fetching ads:', err);
-  }
-
-  // Organize ads by position
-  const adsByPosition = {};
-  ads.forEach(ad => {
-    if (ad.position) adsByPosition[ad.position] = ad;
-  });
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.wisemixmedia.com';
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-gray-50">
       <StaticHero />
 
-      {/* Content Top Ad */}
-      {adsByPosition['content-top'] && (
-        <div className="container mx-auto px-4 mt-6">
-          <Advertisement adData={adsByPosition['content-top']} />
-        </div>
-      )}
-
-      {/* Featured Posts */}
-      <Suspense fallback={null}>
+      {/* Featured Posts سیکشن */}
+      <Suspense fallback={<div className="h-60 bg-gray-100 animate-pulse" />}>
         <FeaturedPosts />
       </Suspense>
 
       <section className="container mx-auto px-4 mt-8">
-        {/* Content Middle Ad */}
-        {adsByPosition['content-middle'] && (
-          <Advertisement
-            adData={adsByPosition['content-middle']}
-            className="my-8"
-          />
-        )}
-
-        {/* Latest Posts + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
-            <LatestPosts page={pageNumber} />
+            {/* Latest Posts میں محفوظ طریقے سے پیج نمبر بھیجیں */}
+            <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse" />}>
+              <LatestPosts page={pageNumber} />
+            </Suspense>
           </div>
-          <Sidebar />
+          <div className="lg:col-span-1">
+            <Sidebar />
+          </div>
         </div>
-
-        {/* Content Bottom Ad */}
-        {adsByPosition['content-bottom'] && (
-          <Advertisement
-            adData={adsByPosition['content-bottom']}
-            className="my-8"
-          />
-        )}
       </section>
     </div>
   );
