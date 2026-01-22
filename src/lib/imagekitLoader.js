@@ -1,12 +1,15 @@
-export default function imagekitLoader({ src, width, quality }) {
-  if (!src) return "";
+import Image from "next/image";
+import imagekitLoader from "@/lib/imagekitLoader";
 
-  // 1. اینڈ پوائنٹ کے آخر سے سلیش ہٹا دیں (اگر موجود ہو)
-  const endpoint = "https://ik.imagekit.io/ag0dicbdub";
-  
-  // 2. ڈیٹا بیس والے پاتھ (src) کے شروع سے سلیش ہٹا دیں
-  const cleanPath = src.replace(/^\/+/, '');
-  
-  // 3. اب ان کو جوڑیں (صرف ایک سلیش کے ساتھ)
-  return `${endpoint}/${cleanPath}?tr=w-${width},q-${quality || 75}`;
+export default function IKImage({ src, alt, ...props }) {
+  if (!src) return <div className="bg-gray-200 w-full h-full" />;
+
+  return (
+    <Image
+      loader={imagekitLoader} // یہ لائن سب سے اہم ہے
+      src={src}
+      alt={alt || "WiseMix Media"}
+      {...props}
+    />
+  );
 }
