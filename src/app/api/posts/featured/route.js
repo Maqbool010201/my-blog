@@ -4,6 +4,14 @@ import prisma from "@/lib/prisma";
 export async function GET(request) {
   try {
     const url = new URL(request.url);
+    
+    // 1. یہاں سے ہم siteId حاصل کریں گے (جو کہ فرنٹ اینڈ پیرامیٹر سے بھیجے گا)
+    const siteId = url.searchParams.get("siteId");
+    
+    if (!siteId) {
+      return NextResponse.json({ error: "siteId is required" }, { status: 400 });
+    }
+
     const excludeIds = (url.searchParams.get("excludeIds") || "")
       .split(",")
       .map(Number)
@@ -11,6 +19,7 @@ export async function GET(request) {
 
     const featuredPosts = await prisma.post.findMany({
       where: {
+        siteId: siteId, // صرف اس مخصوص ویب سائٹ کی پوسٹس
         featured: true,
         published: true,
         id: excludeIds.length ? { notIn: excludeIds } : undefined,
@@ -26,6 +35,6 @@ export async function GET(request) {
     return NextResponse.json(featuredPosts);
   } catch (error) {
     console.error("Error fetching featured posts:", error);
-    return NextResponse.json({ error: "Failed to fetch featured posts", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch featured posts" }, { status: 500 });
   }
 }

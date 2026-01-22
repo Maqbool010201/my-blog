@@ -1,81 +1,92 @@
-// src/app/api/contact/[id]/route.js
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 // GET single message
 export async function GET(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
     
-    const message = await prisma.contactMessage.findUnique({
-      where: { id }
+    // سیکیورٹی: صرف وہ میسج ڈھونڈیں جو اس یوزر کی اپنی سائٹ کا ہو
+    const message = await prisma.contactMessage.findFirst({
+      where: { 
+        id: id,
+        siteId: session.user.siteId 
+      }
     });
 
     if (!message) {
-      return NextResponse.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Message not found or unauthorized' }, { status: 404 });
     }
 
     return NextResponse.json(message);
   } catch (error) {
-    console.error('Error fetching message:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch message' }, { status: 500 });
   }
 }
 
-// UPDATE message status (mark as read/replied/archived)
+// UPDATE message status
 export async function PUT(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
     const validStatuses = ['unread', 'read', 'replied', 'archived'];
     if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const message = await prisma.contactMessage.update({
-      where: { id },
+    // پہلے چیک کریں کہ کیا یہ میسج اسی کلائنٹ کا ہے
+    const existingMessage = await prisma.contactMessage.findFirst({
+      where: { id: id, siteId: session.user.siteId }
+    });
+
+    if (!existingMessage) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 404 });
+    }
+
+    const updatedMessage = await prisma.contactMessage.update({
+      where: { id: id },
       data: { status }
     });
 
-    return NextResponse.json(message);
+    return NextResponse.json(updatedMessage);
   } catch (error) {
-    console.error('Error updating message:', error);
-    return NextResponse.json(
-      { error: 'Failed to update message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update message' }, { status: 500 });
   }
 }
 
 // DELETE message
 export async function DELETE(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
-    
-    await prisma.contactMessage.delete({
-      where: { id }
+
+    // صرف اپنی سائٹ کا میسج ڈیلیٹ کرنے کی اجازت دیں
+    const message = await prisma.contactMessage.findFirst({
+      where: { id: id, siteId: session.user.siteId }
     });
 
-    return NextResponse.json({ 
-      success: true,
-      message: 'Contact message deleted successfully'
+    if (!message) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 404 });
+    }
+    
+    await prisma.contactMessage.delete({
+      where: { id: id }
     });
+
+    return NextResponse.json({ success: true, message: 'Deleted successfully' });
   } catch (error) {
-    console.error('Error deleting message:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
   }
 }

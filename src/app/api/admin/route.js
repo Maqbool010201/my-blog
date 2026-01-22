@@ -1,17 +1,80 @@
-// src/app/api/admins/route.js
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
+/* ----------------------------- GET ALL ADMINS ----------------------------- */
 export async function GET() {
-  const admins = await prisma.admin.findMany({ orderBy: { createdAt: "desc" } });
-  return new Response(JSON.stringify(admins), { headers: { "Content-Type": "application/json" } });
+  try {
+    const session = await getServerSession(authOptions);
+
+    // صرف سپر ایڈمن ہی تمام ایڈمنز دیکھ سکتا ہے
+    if (!session || session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Unauthorized: Super Admin access required" }, { status: 403 });
+    }
+
+    const admins = await prisma.admin.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        siteId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(admins);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch admins" }, { status: 500 });
+  }
 }
 
+/* ----------------------------- CREATE NEW ADMIN ----------------------------- */
 export async function POST(req) {
-  const data = await req.json();
-  if (!data.email || !data.password) return new Response(JSON.stringify({ error: "Missing" }), { status: 400 });
+  try {
+    const session = await getServerSession(authOptions);
 
-  const hashed = await bcrypt.hash(data.password, 10);
-  const admin = await prisma.admin.create({ data: { email: data.email, password: hashed, name: data.name || null } });
-  return new Response(JSON.stringify({ id: admin.id, email: admin.email, name: admin.name }), { status: 201, headers: { "Content-Type": "application/json" } });
+    // سیکیورٹی چیک
+    if (!session || session.user.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const data = await req.json();
+    const { email, password, name, role, siteId } = data;
+
+    if (!email || !password || !siteId) {
+      return NextResponse.json({ error: "Email, Password, and SiteId are required" }, { status: 400 });
+    }
+
+    // چیک کریں کہ ای میل پہلے سے موجود تو نہیں
+    const existing = await prisma.admin.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const admin = await prisma.admin.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || null,
+        role: role || "ADMIN", // ڈیفالٹ رول
+        siteId: siteId, // مخصوص سائٹ کے ساتھ لنک کریں
+      },
+    });
+
+    return NextResponse.json({ 
+      id: admin.id, 
+      email: admin.email, 
+      siteId: admin.siteId 
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error("Admin creation error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }

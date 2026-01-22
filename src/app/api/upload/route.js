@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import ImageKit from "imagekit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-// ImageKit کنفیگریشن
 const imagekit = new ImageKit({
   publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
@@ -12,6 +13,11 @@ export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user.siteId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const form = await req.formData();
     const file = form.get("file");
     
@@ -19,27 +25,43 @@ export async function POST(req) {
       return NextResponse.json({ error: "No file found" }, { status: 400 });
     }
 
-    // فائل کو بفر میں تبدیل کریں
+    // 1. فائل سائز اور ٹائپ کی چیکنگ (SaaS کے لیے ضروری)
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Only images are allowed" }, { status: 400 });
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB Limit
+      return NextResponse.json({ error: "File size exceeds 5MB" }, { status: 400 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+    
+    // فائل کے نام کو کلین بنانا
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, "-");
+    const filename = `${Date.now()}-${cleanFileName}`;
 
-    // امیج کٹ پر اپلوڈ کریں
+    // 2. فولڈر اسٹرکچر: maqbool-cms/SITE_ID/posts
+    const folderPath = `maqbool-cms/${session.user.siteId}/posts`;
+
     const uploadResponse = await imagekit.upload({
       file: buffer,
       fileName: filename,
-      folder: "uploads", // یہ امیج کٹ میں خود بخود فولڈر بنا دے گا
+      folder: folderPath,
+      useUniqueFileName: true,
+      // اگر آپ امیج کو اپلوڈ ہوتے ہی ری سائز کرنا چاہیں تو یہاں tags یا transformations دے سکتے ہیں
     });
 
-    // ہم 'filePath' واپس کر رہے ہیں تاکہ ڈیٹا بیس میں 'uploads/filename.jpg' سیو ہو
     return NextResponse.json({ 
       success: true,
       url: uploadResponse.url, 
-      filePath: uploadResponse.filePath 
+      filePath: uploadResponse.filePath,
+      fileId: uploadResponse.fileId // یہ آئی ڈی بعد میں ڈیلیٹ کرنے کے کام آتی ہے
     }, { status: 200 });
 
   } catch (error) {
     console.error("ImageKit Upload Error:", error);
-    return NextResponse.json({ error: "Upload failed to cloud" }, { status: 500 });
+    return NextResponse.json({ error: "Upload failed: " + error.message }, { status: 500 });
   }
 }

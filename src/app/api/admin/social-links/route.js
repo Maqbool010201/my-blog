@@ -1,63 +1,99 @@
+import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
+/* ----------------------------- GET LINKS ----------------------------- */
 export async function GET(req) {
   try {
-    const links = await prisma.socialLink.findMany({ orderBy: { id: 'asc' } });
-    return new Response(JSON.stringify({ links }), { status: 200 });
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const links = await prisma.socialLink.findMany({ 
+      where: { siteId: session.user.siteId }, // صرف اپنی سائٹ کے لنکس
+      orderBy: { id: 'asc' } 
+    });
+    
+    return NextResponse.json({ links });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to fetch social links' }), { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch social links' }, { status: 500 });
   }
 }
 
+/* ----------------------------- CREATE LINK ----------------------------- */
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { platform, url } = body;
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { platform, url } = await req.json();
 
     if (!platform || !url) {
-      return new Response(JSON.stringify({ error: 'Platform and URL are required' }), { status: 400 });
+      return NextResponse.json({ error: 'Platform and URL are required' }, { status: 400 });
     }
 
-    const link = await prisma.socialLink.create({ data: { platform, url } });
-    return new Response(JSON.stringify(link), { status: 201 });
+    const link = await prisma.socialLink.create({ 
+      data: { 
+        platform, 
+        url, 
+        siteId: session.user.siteId // سیشن سے siteId لیں۔
+      } 
+    });
+    
+    return NextResponse.json(link, { status: 201 });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to create social link' }), { status: 500 });
+    return NextResponse.json({ error: 'Failed to create social link' }, { status: 500 });
   }
 }
 
+/* ----------------------------- UPDATE LINK ----------------------------- */
 export async function PUT(req) {
   try {
-    const body = await req.json();
-    const { id, url } = body;
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!id || !url) {
-      return new Response(JSON.stringify({ error: 'ID and URL are required' }), { status: 400 });
-    }
+    const { id, url } = await req.json();
+
+    // سیکیورٹی چیک: کیا یہ لنک اسی سائٹ کا ہے؟
+    const existing = await prisma.socialLink.findFirst({
+      where: { id: Number(id), siteId: session.user.siteId }
+    });
+
+    if (!existing) return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
 
     const link = await prisma.socialLink.update({
-      where: { id },
+      where: { id: Number(id) },
       data: { url },
     });
 
-    return new Response(JSON.stringify(link), { status: 200 });
+    return NextResponse.json(link);
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to update social link' }), { status: 500 });
+    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
   }
 }
 
+/* ----------------------------- DELETE LINK ----------------------------- */
 export async function DELETE(req) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
+
+    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+    // سیکیورٹی چیک
+    const existing = await prisma.socialLink.findFirst({
+      where: { id: Number(id), siteId: session.user.siteId }
+    });
+
+    if (!existing) return NextResponse.json({ error: 'Unauthorized' }, { status: 404 });
 
     await prisma.socialLink.delete({ where: { id: Number(id) } });
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Failed to delete social link' }), { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
   }
 }

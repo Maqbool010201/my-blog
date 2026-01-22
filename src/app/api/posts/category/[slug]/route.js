@@ -1,64 +1,53 @@
-// src/app/api/posts/category/[slug]/route.js - CREATE THIS FILE
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
   try {
     const { slug } = await params;
+    const { searchParams } = new URL(request.url);
     
-    // 1. Find category by slug
-    const category = await prisma.category.findUnique({
-      where: { slug }
-    });
+    // 1. فرنٹ اینڈ سے siteId لینا لازمی ہے
+    const siteId = searchParams.get("siteId");
     
-    if (!category) {
-      return NextResponse.json(
-        { error: "Category not found" },
-        { status: 404 }
-      );
+    if (!siteId) {
+      return NextResponse.json({ error: "siteId is required" }, { status: 400 });
     }
-    
-    // 2. Get posts ONLY for this category
-    const posts = await prisma.post.findMany({
-      where: {
-        categoryId: category.id, // CRITICAL: Filter by category ID
-        published: true
-      },
-      include: {
-        category: true,
-        author: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
+
+    // 2. کیٹیگری ڈھونڈیں (سلگ اور سائٹ آئی ڈی دونوں کے ساتھ)
+    const category = await prisma.category.findFirst({
+      where: { 
+        slug: slug,
+        siteId: siteId 
       }
     });
     
-    // 3. Return with clear structure
+    if (!category) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+    
+    // 3. اس کیٹیگری کی پوسٹس نکالیں (صرف اسی سائٹ کی)
+    const posts = await prisma.post.findMany({
+      where: {
+        categoryId: category.id,
+        siteId: siteId, // اضافی سیکیورٹی
+        published: true
+      },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        author: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
     return NextResponse.json({
       success: true,
-      category: {
-        id: category.id,
-        name: category.name,
-        slug: category.slug
-      },
-      posts: posts,
+      category,
+      posts,
       count: posts.length
     });
     
   } catch (error) {
     console.error("Error fetching category posts:", error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: "Failed to fetch category posts",
-        posts: []
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
   }
 }

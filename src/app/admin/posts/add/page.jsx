@@ -46,7 +46,7 @@ export default function AddPost() {
 
     const slug = slugify(formData.title, { lower: true, strict: true });
     // یہاں اپنی ویب سائٹ کا اصلی لنک لکھیں
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"; 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     setFormData(prev => ({
       ...prev,
@@ -64,19 +64,23 @@ export default function AddPost() {
   };
 
   // تصویر کو ImageKit پر اپلوڈ کرنے والا فنکشن
+  // اس فنکشن کو تبدیل کریں
   const uploadToImageKit = async (file) => {
     const fd = new FormData();
     fd.append("file", file);
-    
-    const res = await fetch("/api/upload", { 
-      method: "POST", 
-      body: fd 
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: fd
     });
 
     if (!res.ok) throw new Error("Image upload failed");
-    
+
     const data = await res.json();
-    return data.filePath; // یہ 'uploads/filename.jpg' واپس کرے گا
+
+    // یہاں 'data.filePath' کی جگہ 'data.url' واپس کریں تاکہ مکمل لنک ڈیٹا بیس میں جائے
+    // مثال: https://ik.imagekit.io/ag0dicbdub/maqbool-cms/wisemix/posts/filename.png
+    return data.url;
   };
 
   /* ---------------- فارم سبمٹ کرنا ---------------- */
@@ -129,7 +133,7 @@ export default function AddPost() {
 
       setSuccess("Post created successfully! Redirecting...");
       setTimeout(() => router.push("/admin/posts"), 1500);
-      
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -150,7 +154,7 @@ export default function AddPost() {
       {error && <div className="bg-red-500 text-white p-4 mb-6 rounded-lg shadow-md">{error}</div>}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Main Content Area (Left) */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

@@ -2,14 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 
-export const revalidate = 300;
-
 export default async function FeaturedPosts({ excludeIds = [] }) {
   const posts = await prisma.post.findMany({
     where: {
       featured: true,
       published: true,
-      ...(excludeIds.length && {
+      // If your DB uses siteId, make sure it's included here:
+      // siteId: process.env.SITE_ID, 
+      ...(excludeIds.length > 0 && {
         id: { notIn: excludeIds },
       }),
     },
@@ -18,7 +18,10 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
     take: 8,
   });
 
-  if (!posts.length) return null;
+  // If no posts are found, the component won't render
+  if (!posts || posts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-12 bg-white">
@@ -33,19 +36,11 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
 
       <div className="container mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {posts.map((post, index) => {
-          const imageSrc =
-            post.mainImage?.trim()
-              ? post.mainImage.startsWith("http")
-                ? post.mainImage
-                : post.mainImage.startsWith("/")
-                  ? post.mainImage
-                  : `/${post.mainImage}`
-              : "/images/blog/placeholder.svg";
+          const imageSrc = post.mainImage || "/images/blog/placeholder.svg";
 
           return (
-            <Link key={post.id} href={`/blog/${post.slug}`} prefetch={false}>
+            <Link key={post.id} href={`/blog/${post.slug}`}>
               <article className="relative h-[340px] rounded-xl overflow-hidden shadow-lg bg-gray-50 group flex flex-col">
-                
                 <div className="relative w-full h-[210px] bg-gray-200">
                   <Image
                     src={imageSrc}
@@ -53,24 +48,16 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
                     fill
                     priority={index < 2}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 </div>
-
-                <div className="flex flex-col justify-between p-4 flex-grow">
+                <div className="p-4 flex flex-col justify-between flex-grow">
                   <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full w-fit">
                     {post.category?.name || "Uncategorized"}
                   </span>
-
                   <h3 className="mt-3 text-sm font-bold text-gray-900 line-clamp-2">
                     {post.title}
                   </h3>
                 </div>
-
-                <span className="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                  Featured
-                </span>
               </article>
             </Link>
           );

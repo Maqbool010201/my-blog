@@ -1,134 +1,106 @@
-// src/app/api/legal-pages/[slug]/route.js
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-// GET single legal page by slug
+// 1. GET Single Legal Page
 export async function GET(request, { params }) {
   try {
     const { slug } = await params;
-    
-    console.log('API GET slug:', slug);
-    
-    if (!slug || slug === '[slug]') {
-      return NextResponse.json(
-        { error: 'Slug parameter is required' },
-        { status: 400 }
-      );
+    const { searchParams } = new URL(request.url);
+    const session = await getServerSession(authOptions);
+
+    // سیشن سے یا پھر فرنٹ اینڈ ریکوسٹ سے siteId لیں
+    const siteId = session?.user?.siteId || searchParams.get("siteId");
+
+    if (!slug || !siteId) {
+      return NextResponse.json({ error: 'Slug and siteId are required' }, { status: 400 });
     }
 
     const legalPage = await prisma.legalPage.findFirst({
       where: { 
         slug: slug,
+        siteId: siteId, // صرف اپنی سائٹ کا پیج دیکھیں
         isActive: true 
       }
-      // Don't use select here - get all fields for edit
     });
 
     if (!legalPage) {
-      return NextResponse.json(
-        { error: `Legal page "${slug}" not found` },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Legal page not found' }, { status: 404 });
     }
 
     return NextResponse.json(legalPage);
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch legal page' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }
 }
 
-// UPDATE legal page - IMPROVED VERSION
+// 2. UPDATE Legal Page (PUT)
 export async function PUT(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { slug } = await params;
-    
-    if (!slug || slug === '[slug]') {
-      return NextResponse.json(
-        { error: 'Slug parameter is required' },
-        { status: 400 }
-      );
-    }
-    
     const body = await request.json();
     const { title, content, description, order, isActive } = body;
 
-    // Check if page exists
+    // چیک کریں کہ یہ پیج واقعی اس لاگ ان کلائنٹ کا ہے
     const existingPage = await prisma.legalPage.findFirst({
-      where: { slug }
+      where: { 
+        slug: slug,
+        siteId: session.user.siteId 
+      }
     });
 
     if (!existingPage) {
-      return NextResponse.json(
-        { error: 'Legal page not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Legal page not found' }, { status: 404 });
     }
 
-    // Build update data object
-    const updateData = {};
-    if (title !== undefined) updateData.title = title.trim();
-    if (content !== undefined) updateData.content = content;
-    if (description !== undefined) updateData.description = description.trim();
-    if (order !== undefined) updateData.order = parseInt(order) || 0;
-    if (isActive !== undefined) updateData.isActive = isActive;
-
     const legalPage = await prisma.legalPage.update({
-      where: { id: existingPage.id },
-      data: updateData
+      where: { id: existingPage.id }, // ہمیشہ آئی ڈی سے اپ ڈیٹ کریں
+      data: {
+        title: title?.trim(),
+        content,
+        description: description?.trim(),
+        order: parseInt(order) || 0,
+        isActive: isActive !== undefined ? isActive : existingPage.isActive
+      }
     });
 
     return NextResponse.json(legalPage);
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update legal page: ' + error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Update failed' }, { status: 500 });
   }
 }
 
-// DELETE legal page (keep as is)
+// 3. DELETE Legal Page (Soft Delete)
 export async function DELETE(request, { params }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { slug } = await params;
-    
-    if (!slug || slug === '[slug]') {
-      return NextResponse.json(
-        { error: 'Slug parameter is required' },
-        { status: 400 }
-      );
-    }
-    
-    // Check if page exists
+
     const existingPage = await prisma.legalPage.findFirst({
-      where: { slug }
+      where: { 
+        slug: slug,
+        siteId: session.user.siteId 
+      }
     });
 
     if (!existingPage) {
-      return NextResponse.json(
-        { error: 'Legal page not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Legal page not found' }, { status: 404 });
     }
 
-    // Soft delete (set isActive to false)
+    // مکمل ڈیلیٹ کرنے کے بجائے صرف غیر فعال (Deactivate) کر دیں
     const legalPage = await prisma.legalPage.update({
       where: { id: existingPage.id },
       data: { isActive: false }
     });
 
-    return NextResponse.json({ 
-      message: 'Legal page deleted successfully',
-      data: legalPage 
-    });
+    return NextResponse.json({ message: 'Deleted successfully' });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete legal page' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }

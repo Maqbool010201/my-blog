@@ -1,4 +1,3 @@
-// src/app/api/admin/reset-password/route.js
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -8,44 +7,60 @@ export async function POST(req) {
   try {
     const { email, token, newPassword } = await req.json();
 
+    // 1. بنیادی ویلیڈیشن
     if (!email || !token || !newPassword) {
-      return NextResponse.json({ error: "Email, token and new password required" }, { status: 400 });
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     if (newPassword.length < 8) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
-    const admin = await prisma.admin.findUnique({ where: { email } });
-    if (!admin || !admin.resetToken || !admin.resetTokenExpiry) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
-    }
-
-    // Check expiry
-    if (new Date(admin.resetTokenExpiry) < new Date()) {
-      await prisma.admin.update({
-        where: { email },
-        data: { resetToken: null, resetTokenExpiry: null },
-      });
-      return NextResponse.json({ error: "Token has expired" }, { status: 400 });
-    }
-
-    // Verify token
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-    if (admin.resetToken !== hashedToken) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 400 });
-    }
-
-    // Update password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await prisma.admin.update({
-      where: { email },
-      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },
+    // 2. ایڈمن کو تلاش کریں
+    const admin = await prisma.admin.findUnique({ 
+      where: { email: email.toLowerCase().trim() } 
     });
 
-    return NextResponse.json({ success: true, message: "Password reset successful" });
+    if (!admin || !admin.resetToken || !admin.resetTokenExpiry) {
+      return NextResponse.json({ error: "Invalid or expired request" }, { status: 400 });
+    }
+
+    // 3. ٹوکن کی میعاد (Expiry) چیک کریں
+    if (new Date() > new Date(admin.resetTokenExpiry)) {
+      // میعاد ختم ہونے پر ٹوکن صاف کر دیں
+      await prisma.admin.update({
+        where: { id: admin.id },
+        data: { resetToken: null, resetTokenExpiry: null },
+      });
+      return NextResponse.json({ error: "Token has expired. Please request a new one." }, { status: 400 });
+    }
+
+    // 4. ٹوکن کی تصدیق (Verification)
+    // نوٹ: اگر آپ نے request-reset میں ہیش نہیں کیا تھا، تو یہاں بھی موازنہ سادہ ہوگا۔
+    // لیکن سیکیورٹی کے لیے ہیشنگ بہتر ہے۔
+    const incomingTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    
+    // اگر آپ نے پچھلی فائل میں ہیش نہیں کیا تھا تو: if (admin.resetToken !== token)
+    if (admin.resetToken !== incomingTokenHash && admin.resetToken !== token) {
+      return NextResponse.json({ error: "Invalid reset token" }, { status: 400 });
+    }
+
+    // 5. نیا پاس ورڈ ہیش کریں اور اپ ڈیٹ کریں
+    const hashedPassword = await bcrypt.hash(newPassword, 12); // تھوڑا زیادہ سالٹ (12) بہتر ہے
+    
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { 
+        password: hashedPassword, 
+        resetToken: null, 
+        resetTokenExpiry: null 
+      },
+    });
+
+    return NextResponse.json({ success: true, message: "Password updated successfully" });
+
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Reset Password Error:", err);
+    return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
   }
 }

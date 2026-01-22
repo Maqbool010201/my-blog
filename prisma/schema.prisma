@@ -1,93 +1,82 @@
-//prisma schema 
+
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")   // Vercel runtime
-  directUrl = env("DIRECT_URL")     // Migrations
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+        
+
+// =========================
+//  1. Authentication & Users
+// =========================
+model Admin {
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password         String
+  role             String    @default("CLIENT") // SUPER_ADMIN یا CLIENT
+  siteId           String?   // سپر ایڈمن کے لیے خالی، کلائنٹ کے لیے لازمی
+  posts            Post[]
+  resetToken       String?   
+  resetTokenExpiry DateTime? 
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
 }
 
-
-
+// =========================
+//  2. Content Management
+// =========================
 model Post {
-  id         Int      @id @default(autoincrement())
-  title      String
-  slug       String   @unique
-  shortDesc  String?
-  content    String
-  metaTitle  String?
-  metaDesc   String?
-  ogTitle    String?
-  ogDesc     String?
-  ogImage    String?
-  canonical  String?
-  mainImage  String?
-  images     String[]
-  categoryId Int
-  authorId   Int
-  published  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  featured   Boolean  @default(false)
-  author     Admin    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  siteId      String   // کس ویب سائٹ کی پوسٹ ہے؟
+  title       String
+  slug        String   
+  shortDesc   String?
+  content     String
+  metaTitle   String?
+  metaDesc    String?
+  ogTitle     String?
+  ogDesc      String?
+  ogImage     String?
+  canonical   String?
+  mainImage   String?
+  images      String[]
+  categoryId  Int
+  authorId    Int
+  published   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author      Admin    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@index([featured])
+  @@unique([slug, siteId]) // ایک ویب سائٹ پر ایک ہی نام کا سلگ
+  @@index([featured, siteId])
 }
 
 model Category {
   id              Int      @id @default(autoincrement())
-  name            String   @unique
-  slug            String   @unique
+  siteId          String
+  name            String   
+  slug            String   
   metaTitle       String?
   metaDescription String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   posts           Post[]
+
+  @@unique([slug, siteId])
 }
 
-model Admin {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("ADMIN")
-  posts     Post[]
-  resetToken       String?   // new
-  resetTokenExpiry DateTime? // new
-  createdAt DateTime @default(now())
-  updatedAt DateTime? // make it nullable temporarily
-}
-
-model LegalPage {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  content     String
-  description String?
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("legal_pages")
-}
-
-model ContactMessage {
-  id          String   @id @default(cuid())
-  name        String
-  email       String
-  subject     String
-  message     String
-  status      String   @default("unread") // unread, read, replied, archived
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("contact_messages")
-}
-
+// =========================
+//  3. Advertisement System
+// =========================
 enum AdType {
   AFFILIATE
   LINK
@@ -98,46 +87,87 @@ enum AdType {
 }
 
 model Advertisement {
-  id        String   @id @default(cuid())
+  id          String   @id @default(cuid())
+  siteId      String   // Multi-tenant support
 
-  title     String
-  adType    AdType   @default(CUSTOM)
+  title       String
+  adType      AdType   @default(CUSTOM)
 
-  html      String?
-  linkUrl   String?
-  image     String?
-  script    String?
+  html        String?
+  linkUrl     String?
+  image       String?
+  script      String?
 
-  pageType  String   // home | post | category | tool | static
-  pageSlug  String?  // post slug / category slug / tool slug / null for global
+  pageType    String   // home | post | category | tool | static
+  pageSlug    String?  // null for global or specific slug
+  position    String   // content-top | sidebar-bottom | etc
 
-  position  String   // content-top | sidebar-bottom | etc
+  isActive    Boolean  @default(true)
 
-  isActive  Boolean  @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
 
-  startDate DateTime?
-  endDate   DateTime?
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
 
-  impressions Int    @default(0)
-  clicks     Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([pageType, pageSlug, position])
+  @@index([siteId, pageType, pageSlug, position])
 }
 
+// =========================
+//  4. Communication & Legal
+// =========================
+model LegalPage {
+  id          String   @id @default(cuid())
+  siteId      String   // ہر سائٹ کے اپنے Terms/Privacy پیجز ہوں گے
+  slug        String   
+  title       String
+  content     String
+  description String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  @@unique([slug, siteId])
+  @@map("legal_pages")
+}
+
+model ContactMessage {
+  id          String   @id @default(cuid())
+  siteId      String
+  name        String
+  email       String
+  subject     String
+  message     String
+  status      String   @default("unread") 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contact_messages")
+}
+
+// =========================
+//  5. Marketing & Social
+// =========================
 model NewsletterSubscriber {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
+  siteId    String
+  email     String   
   createdAt DateTime @default(now())
+
+  @@unique([email, siteId])
 }
 
 model SocialLink {
   id        Int      @id @default(autoincrement())
-  platform  String   @unique          // e.g., "facebook", "twitter", "instagram", "linkedin"
-  url       String                       // the full URL
+  siteId    String
+  platform  String   // facebook, twitter, etc
+  url       String   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([platform, siteId])
 }
