@@ -1,23 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 1. Image Configuration (Updated for Custom Loader)
+  // turbopack ہٹا دیا گیا ہے کیونکہ یہ ورژن 15 میں سپورٹڈ نہیں ہے
+  
   images: {
     loader: 'custom',
     loaderFile: './src/lib/imagekitLoader.js',
     formats: ['image/avif', 'image/webp'],
-    // remotePatterns کو مزید وسیع کریں تاکہ کسی بھی ذیلی فولڈر (sub-folder) کو قبول کرے
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 3600,
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'ik.imagekit.io',
-        pathname: '/**', // اسے صرف /** کر دیں تاکہ تمام فولڈرز قبول ہوں
+        port: '',
+        pathname: '/**',
       },
     ],
   },
 
-  // 2. Performance & Optimizations
   compress: true,
+
   experimental: {
+    // optimizeCss کو فی الحال ہٹا دیا ہے کیونکہ یہ بلڈ میں کبھی کبھی مسئلہ کرتا ہے
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
@@ -26,12 +31,10 @@ const nextConfig = {
     ],
   },
 
-  // 3. Environment Specifics
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
-  // 4. Security & Caching Headers
   async headers() {
     return [
       {
