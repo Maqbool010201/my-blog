@@ -1,19 +1,12 @@
-// src/lib/imagekitLoader.js
 export default function imagekitLoader({ src, width, quality }) {
-  // اگر src میں پہلے سے https ہے (جیسے ایڈمن میں اپلوڈ کے وقت آتا ہے)
-  if (src.startsWith('http')) return src;
+  if (!src) return "";
 
+  // 1. اینڈ پوائنٹ کے آخر سے سلیش ہٹا دیں (اگر موجود ہو)
   const endpoint = "https://ik.imagekit.io/ag0dicbdub";
   
-  // شروع کا سلیش ہٹانا تاکہ یو آر ایل ڈبل نہ ہو جائے
-  const path = src.startsWith('/') ? src.substring(1) : src;
+  // 2. ڈیٹا بیس والے پاتھ (src) کے شروع سے سلیش ہٹا دیں
+  const cleanPath = src.replace(/^\/+/, '');
   
-  // کوالٹی اور وڈتھ سیٹ کرنا
-  const params = [`w-${width}`];
-  if (quality) {
-    params.push(`q-${quality}`);
-  }
-  const paramsString = params.join(",");
-  
-  return `${endpoint}/${path}?tr=${paramsString}`;
+  // 3. اب ان کو جوڑیں (صرف ایک سلیش کے ساتھ)
+  return `${endpoint}/${cleanPath}?tr=w-${width},q-${quality || 75}`;
 }
