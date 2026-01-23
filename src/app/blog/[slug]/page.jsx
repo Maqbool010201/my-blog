@@ -50,7 +50,7 @@ const getImageUrl = (imgData) => {
     const parts = path.split(".io/ag0dicbdub/");
     path = parts.length > 1 ? parts[1] : path;
   }
-  return path.replace(/^\/+/, ''); // شروع کے سلیش ہٹاتا ہے
+  return path.replace(/^\/+/, ''); 
 };
 
 const getContentParts = (content) => {
@@ -91,14 +91,20 @@ export default async function PostPage({ params }) {
         .prose pre { background-color: #1e1e1e !important; margin: 1.5rem 0; position: relative; border-radius: 10px; border: 1px solid #333; overflow: hidden; }
         .prose pre code { display: block; padding: 1.25rem; overflow: auto; max-height: 400px; color: #d4d4d4; font-size: 0.9rem; line-height: 1.6; }
         .prose img { border-radius: 12px; width: 100%; height: auto !important; margin: 2rem auto; }
-        /* ہائیڈ ایڈ سیکشن اگر وہ خالی ہو */
-        .ad-container:empty { display: none; }
+        
+        /* جب ایڈ نہ ہو تو فالتو جگہ ختم کرنا */
+        .ad-container { display: block; width: 100%; height: auto; transition: all 0.2s ease; }
+        .ad-container:not(:has(img, iframe, ins, a)) {
+          display: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         
-        {/* Top Ad - No fixed height */}
-        <div className="ad-container mb-8 text-center">
+        {/* Top Ad - margin remove kia take empty hone pr space na bache */}
+        <div className="ad-container text-center mb-6">
           <Advertisement page="post" position="content-top" />
         </div>
 
@@ -138,7 +144,7 @@ export default async function PostPage({ params }) {
 
             {secondHalf && (
               <>
-                {/* Middle Ad - Hidden if empty */}
+                {/* Middle Ad */}
                 <div className="ad-container my-8 py-4 border-y border-gray-100 text-center">
                   <Advertisement page="post" position="content-middle" />
                 </div>
