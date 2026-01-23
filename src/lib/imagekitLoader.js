@@ -1,16 +1,18 @@
-export default function imageKitLoader({ src, width, quality }) {
-  // اینڈ پوائنٹ کے آخر میں سلیش نہ لگائیں
-  const endpoint = "https://ik.imagekit.io/ag0dicbdub"; 
+export default function imagekitLoader({ src, width, quality }) {
+  if (!src) return "";
 
-  if (src.startsWith('/images/')) return src;
+  const endpoint = "https://ik.imagekit.io/ag0dicbdub";
+  
+  // 1. اگر src میں پہلے سے مکمل لنک ہے
+  if (src.toString().startsWith('http')) {
+    const baseUrl = src.split('?')[0];
+    return `${baseUrl}?tr=w-${width},q-${quality || 75}`;
+  }
 
-  // یہ لائن بہت اہم ہے: یہ کسی بھی قسم کے فالتو راستے (جیسے /blog/ یا /) کو ہٹا دے گی
-  // صرف وہی پاتھ رکھے گی جو ڈیٹا بیس میں ہے (مثلاً uploads/abc.png)
-  const cleanSrc = src.split('/').filter(p => p === 'uploads' || p.includes('.')).join('/');
+  // 2. اہم: پاتھ کو ویسے ہی رہنے دیں جیسا ڈیٹا بیس میں ہے، بس شروع کا سلیش صاف کریں
+  // ڈیٹا بیس میں پاتھ ہے: /maqbool-cms/wisemix/posts/image.png
+  const cleanPath = src.toString().replace(/^\/+/, '');
   
-  const params = [`w-${width}`];
-  if (quality) params.push(`q-${quality}`);
-  
-  // فائنل لنک چیک کریں: https://ik.imagekit.io/ag0dicbdub/uploads/filename.png
-  return `${endpoint}/${cleanSrc}?tr=${params.join(",")}`;
+  // اب یہ بنے گا: https://ik.imagekit.io/ag0dicbdub/maqbool-cms/wisemix/posts/image.png
+  return `${endpoint}/${cleanPath}?tr=w-${width},q-${quality || 75}`;
 }
