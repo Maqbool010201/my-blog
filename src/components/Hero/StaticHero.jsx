@@ -1,8 +1,8 @@
 import Image from 'next/image';
 
 export default function StaticHero() {
-  // ہم نے امیج سائز کو مزید کم کر کے 600px کر دیا ہے تاکہ یہ فوری لوڈ ہو
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?updatedAt=1768818569676&tr=w-600,q-60,f-webp"; 
+  // ImageKit URL with auto-format and optimization parameters
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-800,q-70,f-auto"; 
 
   return (
     <section className="relative w-full h-[35vh] md:h-[60vh] overflow-hidden bg-[#0a192f]">
@@ -10,14 +10,14 @@ export default function StaticHero() {
         src={heroImageUrl}
         alt="Wise Mix Media"
         fill
-        priority
+        priority // سب سے پہلے لوڈ کرنے کے لیے
         fetchPriority="high"
         decoding="sync"
         className="object-cover object-right md:object-center opacity-70"
-        sizes="(max-width: 768px) 100vw, 800px"
+        // یہ لائن گوگل سپیڈ کے لیے بہت اہم ہے
+        sizes="(max-width: 768px) 100vw, 1200px" 
       />
 
-      {/* Optimized Overlay for Mobile Readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent md:bg-gradient-to-r md:from-white/90 md:to-transparent z-[1]" />
 
       <div className="relative z-10 container mx-auto h-full px-4 flex items-center justify-center md:justify-start">
