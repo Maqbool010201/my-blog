@@ -18,7 +18,6 @@ const geistMono = Geist_Mono({
   display: 'swap' 
 });
 
-// یہاں ہم نے verification شامل کی ہے
 export const metadata = {
   title: {
     default: 'Wise Mix Media | Insightful Content for Growth',
@@ -26,7 +25,7 @@ export const metadata = {
   },
   description: 'Explore expert-written articles across technology, business, and lifestyle.',
   authors: [{ name: 'Maqbool' }],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.wisemixmedia.com'),
   verification: {
     google: 'E3wAaKlxb0PSG-ooGjBa6CHOnp7RG8tJSC7IJYIsJ_Y',
   },
@@ -51,13 +50,21 @@ async function getCategories() {
 export default async function RootLayout({ children }) {
   const categories = await getCategories();
 
+  // اہم بات: یہ لنک وہی ہونا چاہیے جو آپ کے ہیرو سیکشن میں ہے
+  const lcpImage = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-600,q-60,f-auto";
+
   return (
     <html lang="en">
       <head>
+        {/* Preconnect to ImageKit: امیج لوڈ ہونے سے پہلے کنکشن تیار کرے گا */}
+        <link rel="preconnect" href="https://ik.imagekit.io" />
+        <link rel="dns-prefetch" href="https://ik.imagekit.io" />
+        
+        {/* Preload LCP Image: براؤزر کو بتائے گا کہ یہ سب سے ضروری فائل ہے */}
         <link 
           rel="preload" 
           as="image" 
-          href="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-750" 
+          href={lcpImage}
           fetchPriority="high"
         />
       </head>
