@@ -4,7 +4,8 @@ import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
 
-// 'force-dynamic' کو ہٹا دیں تاکہ ISR کام کرے
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({ 
   variable: '--font-geist-sans', 
   subsets: ['latin'], 
@@ -17,6 +18,7 @@ const geistMono = Geist_Mono({
   display: 'swap' 
 });
 
+// یہاں ہم نے verification شامل کی ہے
 export const metadata = {
   title: {
     default: 'Wise Mix Media | Insightful Content for Growth',
@@ -24,16 +26,16 @@ export const metadata = {
   },
   description: 'Explore expert-written articles across technology, business, and lifestyle.',
   authors: [{ name: 'Maqbool' }],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.wisemixmedia.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   verification: {
     google: 'E3wAaKlxb0PSG-ooGjBa6CHOnp7RG8tJSC7IJYIsJ_Y',
   },
 };
 
-// کیٹیگریز فیچ کرنے کا فنکشن
 async function getCategories() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (!baseUrl) return [];
+
   try {
     const res = await fetch(`${baseUrl}/api/categories`, { 
       next: { revalidate: 3600 } 
@@ -41,6 +43,7 @@ async function getCategories() {
     if (!res.ok) return [];
     return await res.json();
   } catch (error) {
+    console.error("Category fetch error:", error);
     return [];
   }
 }
@@ -51,11 +54,10 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* Preload the EXACT Hero Image URL that you are using in StaticHero */}
         <link 
           rel="preload" 
           as="image" 
-          href="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?updatedAt=1768818569676&tr=w-600,q-60,f-webp" 
+          href="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-750" 
           fetchPriority="high"
         />
       </head>
