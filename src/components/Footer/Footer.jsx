@@ -11,9 +11,9 @@ export default async function Footer() {
   try {
     // ہم ڈیٹا فیچ کر رہے ہیں
     const [legalRes, catRes, socialRes] = await Promise.all([
-      fetch(`${baseUrl}/api/legal-pages`, { next: { revalidate: 3600 } }).catch(() => null),
-      fetch(`${baseUrl}/api/categories`, { next: { revalidate: 3600 } }).catch(() => null),
-      fetch(`${baseUrl}/api/admin/social-links`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/api/legal-pages?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
+      fetch(`${baseUrl}/api/categories?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
+      fetch(`${baseUrl}/api/admin/social-links?siteId=wisemix`, { cache: 'no-store' }).catch(() => null),
     ]);
 
     // ڈیٹا کو محفوظ طریقے سے نکالنا (Safe Parsing)
@@ -42,13 +42,13 @@ export default async function Footer() {
     <footer className="w-full bg-[#0b1221] text-white py-12 border-t border-gray-800">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6">
-          
+
           <div className="col-span-2">
             <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               Wisemix Media
             </h3>
             <p className="text-gray-400 mb-6 max-w-sm text-sm leading-relaxed">
-              Your premier destination for diverse insights and trending stories. 
+              Your premier destination for diverse insights and trending stories.
               Delivering high-quality content across multiple niches.
             </p>
             <div className="flex items-center">
