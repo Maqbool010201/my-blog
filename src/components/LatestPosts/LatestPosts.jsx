@@ -4,7 +4,6 @@ import Pagination from "@/components/Pagination/Pagination";
 import prisma from "@/lib/prisma";
 
 // --- ISR SETTING ---
-// یہ پیج ہر 3600 سیکنڈز (1 گھنٹہ) بعد بیک گراؤنڈ میں ری جنریٹ ہوگا
 export const revalidate = 3600; 
 
 const POSTS_PER_PAGE = 6;
@@ -12,7 +11,7 @@ const POSTS_PER_PAGE = 6;
 export default async function LatestPosts({ page = 1, categorySlug = null }) {
   const skip = (page - 1) * POSTS_PER_PAGE;
 
-  // Prisma query remains the same but now it's statically cached
+  // Prisma query
   const [posts, totalPosts] = await Promise.all([
     prisma.post.findMany({
       where: {
@@ -34,19 +33,21 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
     }),
   ]);
 
+  // CLS Fix: اگر پوسٹس نہ ہوں تو بھی ایک مخصوص ہائٹ برقرار رکھیں
   if (!posts.length) {
     return (
-      <section className="py-12 bg-gray-50 min-h-[400px] flex items-center">
+      <section className="py-12 bg-gray-50 min-h-[600px] flex items-center justify-center">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-gray-800">Latest Articles</h2>
-          <p className="text-gray-600 mt-2">No articles available.</p>
+          <p className="text-gray-600 mt-2">Stay tuned! New stories are coming soon.</p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-12 bg-gray-50">
+    // min-h-[800px] موبائل پر لے آؤٹ شفٹ (CLS) کو روکتا ہے
+    <section className="py-12 bg-gray-50 min-h-[800px]">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
@@ -64,15 +65,17 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
               className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full"
             >
               <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-                {/* CLS Control: Aspect Ratio is key */}
-                <div className="relative w-full aspect-[16/9] bg-gray-200 shrink-0">
+                {/* CLS Control: Aspect Ratio is key to prevent shifting */}
+                <div className="relative w-full aspect-[16/9] bg-gray-200 overflow-hidden shrink-0">
                   <Image
-                    src={post.mainImage || "/images/blog/placeholder.svg"}
+                    // ImageKit optimization: q-75 and f-auto for speed
+                    src={`${post.mainImage || "/images/blog/placeholder.svg"}?tr=q-75,f-auto`}
                     alt={post.title}
                     fill
-                    // ISR کے ساتھ پہلی امیج کو priority دیں تاکہ LCP کم ہو
-                    priority={index === 0}
+                    // LCP Fix: پہلی دو تصاویر کو priority دیں تاکہ موبائل پر جلدی لوڈ ہوں
+                    priority={index < 2}
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    // Responsive sizes: موبائل پر 100% چوڑائی، ڈیسک ٹاپ پر 33%
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
@@ -103,8 +106,8 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
           ))}
         </div>
 
-        {/* Pagination handles its own state but links are statically generated */}
-        <div className="mt-16 border-t border-gray-200 pt-10">
+        {/* Pagination container with fixed padding to avoid shift */}
+        <div className="mt-16 border-t border-gray-200 pt-10 min-h-[100px]">
           {totalPosts > POSTS_PER_PAGE && (
             <Pagination
               totalPosts={totalPosts}
