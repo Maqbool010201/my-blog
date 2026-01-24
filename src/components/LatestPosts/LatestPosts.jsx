@@ -31,8 +31,8 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
   ]);
 
   return (
-    /* CLS FIX: min-h-225 اور py-20 تاکہ فوٹر اوپر نہ آئے */
-    <section className="py-20 bg-white min-h-225">
+    /* CLS FIX: Square brackets [] کے ساتھ فکسڈ ہائٹ دیں تاکہ ٹیل ونڈ اسے پہچان سکے */
+    <section className="py-20 bg-white min-h-[900px]">
       <div className="container mx-auto px-4">
         <div className="mb-12">
           <h2 className="text-4xl font-black text-gray-900 border-l-8 border-blue-600 pl-6">
@@ -40,14 +40,13 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
           </h2>
         </div>
 
-        {/* کنٹینر کو فکسڈ ہائٹ دیں تاکہ ڈیٹا آنے سے پہلے جگہ خالی نہ لگے */}
-        <div className="min-h-150">
+        <div className="min-h-[600px]">
           {posts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {posts.map((post, index) => (
                 <article key={post.id} className="group flex flex-col h-full bg-white">
                   <Link href={`/blog/${post.slug}`}>
-                    <div className="relative aspect-16/10 w-full overflow-hidden rounded-2xl bg-gray-100">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-gray-100">
                       <Image
                         src={`${post.mainImage || "/placeholder.png"}?tr=w-500,q-70`}
                         alt={post.title}
@@ -68,7 +67,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-125 border-4 border-dashed border-gray-100 rounded-3xl">
+            <div className="flex flex-col items-center justify-center h-[500px] border-4 border-dashed border-gray-100 rounded-3xl">
               <p className="text-gray-800 font-black text-2xl">Working on new content!</p>
               <p className="text-gray-500 mt-2">Check back in a few hours for fresh stories.</p>
             </div>
