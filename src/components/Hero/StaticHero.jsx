@@ -1,30 +1,43 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 export default function StaticHero() {
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-600,q-60,f-auto";
+  // ہم نے امیج سائز کو مزید کم کر کے 600px کر دیا ہے تاکہ یہ فوری لوڈ ہو
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?updatedAt=1768818569676&tr=w-600,q-60,f-webp"; 
 
   return (
-    <section 
-      className="relative w-full overflow-hidden bg-[#050c1a]" 
-      style={{ height: '250px' }} // موبائل ہائٹ فکسڈ
-    >
-      {/* Desktop adjustment using a wrapper with different height */}
-      <div className="absolute inset-0 md:hidden">
-         <Image src={heroImageUrl} alt="Hero" fill priority fetchPriority="high" className="object-cover opacity-60" sizes="100vw" />
+    <section className="relative w-full h-[35vh] md:h-[60vh] overflow-hidden bg-[#0a192f]">
+      <Image
+        src={heroImageUrl}
+        alt="Wise Mix Media"
+        fill
+        priority
+        fetchPriority="high"
+        decoding="sync"
+        className="object-cover object-right md:object-center opacity-70"
+        sizes="(max-width: 768px) 100vw, 800px"
+      />
+
+      {/* Optimized Overlay for Mobile Readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent md:bg-gradient-to-r md:from-white/90 md:to-transparent z-[1]" />
+
+      <div className="relative z-10 container mx-auto h-full px-4 flex items-center justify-center md:justify-start">
+        <div className="max-w-xl text-center md:text-left pt-4">
+          <span className="inline-block mb-1 text-[9px] font-bold tracking-[0.2em] uppercase text-blue-400 md:text-blue-600 bg-black/20 md:bg-transparent px-2 py-0.5 rounded">
+            Digital Media Platform
+          </span>
+
+          <h1 className="text-xl sm:text-3xl md:text-6xl font-black text-white md:text-slate-900 leading-tight drop-shadow-md md:drop-shadow-none">
+            Insightful Content.<br className="hidden md:block" />
+            <span className="text-blue-400 md:text-blue-600"> Curated for Growth.</span>
+          </h1>
+
+          <div className="mt-4 md:mt-6">
+            <button className="bg-blue-600 text-white px-5 py-2 md:px-8 md:py-3 rounded-full text-xs md:text-base font-bold transition-all shadow-lg active:scale-95">
+              Read Articles
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="hidden md:block absolute inset-0" style={{ height: '500px' }}>
-         <Image src={heroImageUrl} alt="Hero" fill priority fetchPriority="high" className="object-cover opacity-60" sizes="100vw" />
-      </div>
-      
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 z-10">
-        <h1 className="text-3xl md:text-7xl font-black text-white mb-2 tracking-tighter uppercase italic">
-          Wise Mix <span className="text-blue-500">Media</span>
-        </h1>
-        <p className="text-sm md:text-xl text-gray-300 max-w-2xl font-light">
-          Mastering Digital Skills at the Heart of Labor.
-        </p>
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050c1a] via-transparent to-black/20"></div>
     </section>
   );
 }
