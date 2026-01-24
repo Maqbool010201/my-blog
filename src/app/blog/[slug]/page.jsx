@@ -92,7 +92,17 @@ export default async function PostPage({ params }) {
         .prose pre code { display: block; padding: 1.25rem; overflow: auto; max-height: 400px; color: #d4d4d4; font-size: 0.9rem; line-height: 1.6; }
         .prose img { border-radius: 12px; width: 100%; height: auto !important; margin: 2rem auto; }
         
-        /* جب ایڈ نہ ہو تو فالتو جگہ ختم کرنا */
+        /* لنکس کو نیلا کرنے کے لیے اسٹائل */
+        .prose a { 
+          color: #2563eb !important; 
+          text-decoration: underline; 
+          font-weight: 500;
+        }
+        .prose a:hover { 
+          color: #1d4ed8 !important; 
+          text-decoration: none;
+        }
+
         .ad-container { display: block; width: 100%; height: auto; transition: all 0.2s ease; }
         .ad-container:not(:has(img, iframe, ins, a)) {
           display: none !important;
@@ -103,7 +113,6 @@ export default async function PostPage({ params }) {
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         
-        {/* Top Ad - margin remove kia take empty hone pr space na bache */}
         <div className="ad-container text-center mb-6">
           <Advertisement page="post" position="content-top" />
         </div>
@@ -144,7 +153,6 @@ export default async function PostPage({ params }) {
 
             {secondHalf && (
               <>
-                {/* Middle Ad */}
                 <div className="ad-container my-8 py-4 border-y border-gray-100 text-center">
                   <Advertisement page="post" position="content-middle" />
                 </div>
@@ -152,7 +160,6 @@ export default async function PostPage({ params }) {
               </>
             )}
 
-            {/* Bottom Ad */}
             <div className="ad-container mt-12 text-center">
               <Advertisement page="post" position="content-bottom" />
             </div>
