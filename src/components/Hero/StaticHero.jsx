@@ -1,7 +1,7 @@
 import Image from 'next/image';
 
 export default function StaticHero() {
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-600,q-60,f-webp"; 
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-400,q-50,f-auto";
 
   return (
     /* موبائل پر 280px اور ڈیسک ٹاپ پر 500px فکسڈ ہائٹ */
@@ -12,9 +12,10 @@ export default function StaticHero() {
         fill
         priority
         fetchPriority="high"
+        loading="eager" // اسے فوری لوڈ کرنے پر مجبور کریں
         decoding="sync"
-        className="object-cover object-right md:object-center opacity-70"
-        sizes="100vw"
+        className="object-cover opacity-70"
+        sizes="(max-width: 768px) 100vw, 1200px"
       />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-[1]" />

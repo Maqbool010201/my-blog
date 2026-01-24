@@ -23,35 +23,36 @@ export default async function Sidebar() {
   const sidebarTopAd = ads.find(ad => ad.position === 'sidebar-top');
 
   return (
-    /* CLS Fix: سائیڈ بار کو ایک منیمم وڈتھ دیں تاکہ وہ لوڈ ہوتے وقت ہلے نہیں */
-    <aside className="w-full flex flex-col space-y-6 min-h-[800px]">
+    <aside className="w-full flex flex-col space-y-8" style={{ minWidth: '300px' }}>
       
-      {/* Ad Section: ایڈ کے کنٹینر کو فکسڈ ہائٹ دیں (مثلاً 250px) */}
-      {sidebarTopAd && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-h-[250px] flex items-center justify-center">
+      {/* Ad Section with Fixed Placeholder Height to prevent CLS */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4" style={{ minHeight: '280px' }}>
+        {sidebarTopAd ? (
           <Advertisement adData={sidebarTopAd} page="home" position="sidebar-top" />
-        </div>
-      )}
+        ) : (
+          <div className="h-[250px] flex items-center justify-center text-gray-300 text-xs italic">
+            Advertisement Space
+          </div>
+        )}
+      </div>
 
       {/* Latest Stories */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="text-lg font-bold mb-4 text-gray-900 pb-2 border-b border-gray-100">Latest Stories</h3>
-        <div className="space-y-4">
+        <h3 className="text-lg font-bold mb-5 text-gray-900 pb-2 border-b-2 border-blue-50">Latest Stories</h3>
+        <div className="space-y-5">
           {latestPosts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
-              <div className="flex items-center gap-3">
-                {/* CLS FIX: امیج کنٹینر کو فکسڈ سائز دیں */}
-                <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-50">
+              <div className="flex items-center gap-4">
+                <div className="relative w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-50">
                   <IKImage 
                     src={post.mainImage || "/placeholder.jpg"} 
                     alt={post.title} 
                     fill 
-                    sizes="48px" 
-                    priority={false} // سائیڈ بار کی امیجز کو پریورٹی نہ دیں
-                    className="object-cover group-hover:scale-110 transition-transform" 
+                    sizes="60px" 
+                    className="object-cover group-hover:scale-110 transition-transform duration-300" 
                   />
                 </div>
-                <p className="text-sm font-bold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                <p className="text-sm font-bold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug">
                   {post.title}
                 </p>
               </div>
@@ -62,12 +63,16 @@ export default async function Sidebar() {
 
       <SidebarClient siteId="wisemix" />
 
-      {/* Topics: کیٹیگریز کے لیے بھی منیمم ہائٹ */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 min-h-[150px]">
-        <h3 className="text-lg font-bold mb-4 text-gray-900 pb-2 border-b border-gray-100">Topics</h3>
+      {/* Topics */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <h3 className="text-lg font-bold mb-4 text-gray-900 pb-2 border-b-2 border-blue-50">Explore Topics</h3>
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
-            <Link key={cat.id} href={`/category/${cat.slug}`} className="text-xs font-bold text-gray-600 bg-gray-50 px-3 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-gray-100">
+            <Link 
+              key={cat.id} 
+              href={`/category/${cat.slug}`} 
+              className="text-[11px] font-bold text-gray-600 bg-gray-50 px-3 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-all border border-gray-100 uppercase tracking-tight"
+            >
               {cat.name}
             </Link>
           ))}
