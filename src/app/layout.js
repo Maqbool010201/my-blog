@@ -34,7 +34,6 @@ export const metadata = {
 async function getCategories() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (!baseUrl) return [];
-
   try {
     const res = await fetch(`${baseUrl}/api/categories`, { 
       next: { revalidate: 3600 } 
@@ -49,24 +48,14 @@ async function getCategories() {
 
 export default async function RootLayout({ children }) {
   const categories = await getCategories();
-
-  // اہم بات: یہ لنک وہی ہونا چاہیے جو آپ کے ہیرو سیکشن میں ہے
   const lcpImage = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-600,q-60,f-auto";
 
   return (
     <html lang="en">
       <head>
-        {/* Preconnect to ImageKit: امیج لوڈ ہونے سے پہلے کنکشن تیار کرے گا */}
-        <link rel="preconnect" href="https://ik.imagekit.io" />
+        <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://ik.imagekit.io" />
-        
-        {/* Preload LCP Image: براؤزر کو بتائے گا کہ یہ سب سے ضروری فائل ہے */}
-        <link 
-          rel="preload" 
-          as="image" 
-          href={lcpImage}
-          fetchPriority="high"
-        />
+        <link rel="preload" as="image" href={lcpImage} fetchPriority="high" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers>

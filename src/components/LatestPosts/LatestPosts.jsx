@@ -31,8 +31,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
   ]);
 
   return (
-    /* CLS FIX: Square brackets [] کے ساتھ فکسڈ ہائٹ دیں تاکہ ٹیل ونڈ اسے پہچان سکے */
-    <section className="py-20 bg-white min-h-[900px]">
+    <section className="py-20 bg-white" style={{ minHeight: '1200px' }}>
       <div className="container mx-auto px-4">
         <div className="mb-12">
           <h2 className="text-4xl font-black text-gray-900 border-l-8 border-blue-600 pl-6">
@@ -40,7 +39,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
           </h2>
         </div>
 
-        <div className="min-h-[600px]">
+        <div style={{ minHeight: '800px' }}>
           {posts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {posts.map((post, index) => (
