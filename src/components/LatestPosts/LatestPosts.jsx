@@ -12,6 +12,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
   const [posts, totalPosts] = await Promise.all([
     prisma.post.findMany({
       where: {
+        siteId: "wisemix", // سائیڈ آئی ڈی لازمی شامل کریں
         published: true,
         featured: false,
         ...(categorySlug ? { category: { slug: categorySlug } } : {}),
@@ -23,6 +24,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
     }),
     prisma.post.count({
       where: {
+        siteId: "wisemix",
         published: true,
         featured: false,
         ...(categorySlug ? { category: { slug: categorySlug } } : {}),
@@ -31,16 +33,13 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
   ]);
 
   return (
-    /* CLS FIX: min-h-[1000px] بہت ضروری ہے */
-    <section className="py-12 bg-gray-50 min-h-[1000px]">
+    /* CLS FIX: پورے سیکشن کو 1000px کی منیمم ہائٹ دیں */
+    <section className="py-12 bg-gray-50 min-h-[1000px] w-full">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
-            Latest Articles
+        <div className="mb-10 text-center md:text-left">
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 border-l-8 border-blue-600 pl-4">
+            Latest Stories
           </h2>
-          <p className="text-gray-600 max-w-xl mx-auto text-sm">
-            Static Content for maximum speed, updated hourly.
-          </p>
         </div>
 
         {posts.length > 0 ? (
@@ -48,28 +47,21 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
             {posts.map((post, index) => (
               <article key={post.id} className="group bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
                 <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-                  {/* Image Container with fixed aspect ratio */}
+                  {/* Aspect Ratio Box to stop layout shift */}
                   <div className="relative w-full aspect-[16/9] bg-gray-200">
                     <Image
-                      src={post.mainImage || "/placeholder.png"}
+                      src={post.mainImage || "/placeholder.jpg"}
                       alt={post.title}
                       fill
-                      priority={index < 2} // پہلی دو پوسٹس کو جلدی لوڈ کریں
+                      priority={index === 0} // صرف پہلی پوسٹ کو پریورٹی دیں
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
-
                   <div className="p-5 flex flex-col grow">
-                    <span className="text-[10px] font-bold uppercase text-blue-600 mb-2">
-                      {post.category?.name || "General"}
-                    </span>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                      {post.shortDesc}
-                    </p>
+                    <span className="text-[10px] font-bold uppercase text-blue-600 mb-2">{post.category?.name}</span>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">{post.shortDesc}</p>
                     <div className="mt-auto">
                       <span className="text-blue-600 text-sm font-bold">Read More →</span>
                     </div>
@@ -79,8 +71,9 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <p className="text-gray-500">No articles found.</p>
+          /* Empty State: اس کی ہائٹ بھی فکس رکھیں */
+          <div className="flex flex-col items-center justify-center h-[400px]">
+            <p className="text-gray-500 font-bold">No articles found in this category.</p>
           </div>
         )}
 

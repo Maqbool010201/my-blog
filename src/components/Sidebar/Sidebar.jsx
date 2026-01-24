@@ -1,11 +1,10 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
-import IKImage from '@/components/IKImage'; // یقینی بنائیں کہ یہ پاتھ صحیح ہے
+import IKImage from '@/components/IKImage'; 
 import Advertisement from '@/components/Advertisement/Advertisement';
 import SidebarClient from './SidebarClient';
 
 export default async function Sidebar() {
-  // ڈیٹا بیس سے ڈیٹا فیچ کرنا
   const [latestPosts, categories, ads] = await Promise.all([
     prisma.post.findMany({
       where: { siteId: "wisemix", published: true },
@@ -24,28 +23,31 @@ export default async function Sidebar() {
   const sidebarTopAd = ads.find(ad => ad.position === 'sidebar-top');
 
   return (
-    <aside className="w-full flex flex-col space-y-6">
-      {/* Ad Section */}
+    /* CLS Fix: سائیڈ بار کو ایک منیمم وڈتھ دیں تاکہ وہ لوڈ ہوتے وقت ہلے نہیں */
+    <aside className="w-full flex flex-col space-y-6 min-h-[800px]">
+      
+      {/* Ad Section: ایڈ کے کنٹینر کو فکسڈ ہائٹ دیں (مثلاً 250px) */}
       {sidebarTopAd && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-h-[250px] flex items-center justify-center">
           <Advertisement adData={sidebarTopAd} page="home" position="sidebar-top" />
         </div>
       )}
 
-      {/* Latest Posts */}
+      {/* Latest Stories */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <h3 className="text-lg font-bold mb-4 text-gray-900 pb-2 border-b border-gray-100">Latest Stories</h3>
         <div className="space-y-4">
           {latestPosts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
               <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                  {/* یہاں چیک کریں کہ post.mainImage موجود ہے */}
+                {/* CLS FIX: امیج کنٹینر کو فکسڈ سائز دیں */}
+                <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-50">
                   <IKImage 
                     src={post.mainImage || "/placeholder.jpg"} 
                     alt={post.title} 
                     fill 
                     sizes="48px" 
+                    priority={false} // سائیڈ بار کی امیجز کو پریورٹی نہ دیں
                     className="object-cover group-hover:scale-110 transition-transform" 
                   />
                 </div>
@@ -58,11 +60,10 @@ export default async function Sidebar() {
         </div>
       </div>
 
-      {/* Newsletter Client Component */}
       <SidebarClient siteId="wisemix" />
 
-      {/* Categories */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      {/* Topics: کیٹیگریز کے لیے بھی منیمم ہائٹ */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 min-h-[150px]">
         <h3 className="text-lg font-bold mb-4 text-gray-900 pb-2 border-b border-gray-100">Topics</h3>
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
