@@ -31,52 +31,52 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
   ]);
 
   return (
-    /* CLS FIX: min-h کو بڑھا کر 800px کریں تاکہ لوڈنگ کے دوران نیچے والا فوٹر اوپر نہ بھاگے */
-    <section className="py-12 bg-white min-h-[800px] transition-all duration-300">
+    /* CLS FIX: min-h-[900px] اور py-20 تاکہ فوٹر اوپر نہ آئے */
+    <section className="py-20 bg-white min-h-[900px]">
       <div className="container mx-auto px-4">
-        <div className="mb-10">
-          <h2 className="text-3xl font-black text-gray-900 border-l-4 border-blue-600 pl-4">
+        <div className="mb-12">
+          <h2 className="text-4xl font-black text-gray-900 border-l-8 border-blue-600 pl-6">
             Latest Stories
           </h2>
         </div>
 
-        {posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post, index) => (
-              <article 
-                key={post.id} 
-                className="flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100"
-              >
-                <Link href={`/blog/${post.slug}`}>
-                  {/* Image Container with fixed Aspect Ratio to prevent shift */}
-                  <div className="relative aspect-[16/9] w-full bg-gray-200">
-                    <Image
-                      src={`${post.mainImage || "/placeholder.png"}?tr=w-600,q-70,f-auto`}
-                      alt={post.title}
-                      fill
-                      priority={index < 2} 
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-                  <div className="p-5">
-                    <span className="text-blue-700 text-xs font-bold uppercase">{post.category?.name}</span>
-                    <h3 className="text-xl font-bold text-gray-900 mt-2 line-clamp-2">{post.title}</h3>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
-        ) : (
-          /* CLS & LCP FIX: Empty state must have enough height */
-          <div className="flex flex-col items-center justify-center min-h-[500px] border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 text-center">
-            <p className="text-gray-800 font-bold text-xl">Updates coming soon!</p>
-            <p className="text-gray-600 mt-2">We are preparing fresh content for you.</p>
-          </div>
-        )}
+        {/* کنٹینر کو فکسڈ ہائٹ دیں تاکہ ڈیٹا آنے سے پہلے جگہ خالی نہ لگے */}
+        <div className="min-h-[600px]">
+          {posts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {posts.map((post, index) => (
+                <article key={post.id} className="group flex flex-col h-full bg-white">
+                  <Link href={`/blog/${post.slug}`}>
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-gray-100">
+                      <Image
+                        src={`${post.mainImage || "/placeholder.png"}?tr=w-500,q-70`}
+                        alt={post.title}
+                        fill
+                        priority={index < 2} 
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
+                    <div className="pt-6">
+                      <span className="text-blue-600 text-xs font-bold uppercase tracking-widest">{post.category?.name}</span>
+                      <h3 className="text-2xl font-bold text-gray-900 mt-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {post.title}
+                      </h3>
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[500px] border-4 border-dashed border-gray-100 rounded-3xl">
+              <p className="text-gray-800 font-black text-2xl">Working on new content!</p>
+              <p className="text-gray-500 mt-2">Check back in a few hours for fresh stories.</p>
+            </div>
+          )}
+        </div>
 
         {totalPosts > POSTS_PER_PAGE && (
-          <div className="mt-16 flex justify-center">
+          <div className="mt-20 flex justify-center">
             <Pagination
               totalPosts={totalPosts}
               postsPerPage={POSTS_PER_PAGE}
