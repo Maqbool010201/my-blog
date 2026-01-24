@@ -30,78 +30,55 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
     }),
   ]);
 
-  // CLS Fix for Mobile: پورے سیکشن کو ایک مخصوص ہائٹ دے دی گئی ہے تاکہ "جھٹکا" نہ لگے
   return (
-    <section className="py-12 bg-gray-50 min-h-[900px] md:min-h-fit">
+    <section className="py-12 bg-white min-h-[600px]">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
-            Latest Articles
+        <div className="mb-10">
+          <h2 className="text-3xl font-black text-gray-900 border-l-4 border-blue-600 pl-4">
+            Latest Stories
           </h2>
         </div>
 
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post, index) => (
-              <article
-                key={post.id}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full"
-              >
-                <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-                  {/* Aspect Ratio keeps the image space reserved even before loading */}
-                  <div className="relative w-full aspect-[16/9] bg-gray-200 shrink-0">
+              <article key={post.id} className="flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <Link href={`/blog/${post.slug}`}>
+                  <div className="relative aspect-[16/9] w-full bg-gray-100">
                     <Image
-                      src={`${post.mainImage || "/images/placeholder.svg"}?tr=w-600,q-70`}
+                      src={`${post.mainImage || "/placeholder.png"}?tr=w-600,f-auto`}
                       alt={post.title}
                       fill
-                      // Mobile LCP Improvement: First 2 images load instantly
-                      priority={index < 2}
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      priority={index < 2} // Mobile LCP fix
+                      className="object-cover"
                     />
                   </div>
-
-                  <div className="p-5 flex flex-col grow">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                        {post.category?.name || "General"}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl font-bold text-gray-850 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {post.title}
-                    </h3>
-
-                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed mb-4">
-                      {post.shortDesc}
-                    </p>
-                    
-                    <div className="mt-auto pt-2">
-                      <span className="text-blue-600 text-sm font-bold inline-flex items-center group-hover:translate-x-1 transition-transform">
-                        Read More →
-                      </span>
-                    </div>
+                  <div className="p-5">
+                    <span className="text-blue-600 text-xs font-bold uppercase">{post.category?.name}</span>
+                    <h3 className="text-xl font-bold text-gray-900 mt-2 line-clamp-2">{post.title}</h3>
+                    <p className="text-gray-600 text-sm mt-3 line-clamp-3">{post.shortDesc}</p>
                   </div>
                 </Link>
               </article>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <p className="text-gray-500">No posts found.</p>
+          /* CLS Fix: Keeping a minimum height even when empty */
+          <div className="flex flex-col items-center justify-center min-h-[400px] border-2 border-dashed border-gray-100 rounded-2xl">
+            <p className="text-gray-400 font-medium">New stories are being cooked! Stay tuned.</p>
           </div>
         )}
 
-        <div className="mt-16 border-t border-gray-200 pt-10">
-          {totalPosts > POSTS_PER_PAGE && (
+        {totalPosts > POSTS_PER_PAGE && (
+          <div className="mt-12 flex justify-center">
             <Pagination
               totalPosts={totalPosts}
               postsPerPage={POSTS_PER_PAGE}
               basePath={categorySlug ? `/category/${categorySlug}` : "/"}
               currentPage={page}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
