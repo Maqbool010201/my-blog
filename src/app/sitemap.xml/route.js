@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://wisemixmedia.com';
 
