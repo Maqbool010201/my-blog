@@ -73,18 +73,47 @@ export default async function PostPage({ params }) {
 
   if (!post || !post.published) notFound();
 
-  let relatedPosts = await prisma.post.findMany({
-    where: { published: true, categoryId: post.categoryId, siteId: "wisemix", id: { not: post.id } },
-    orderBy: { createdAt: "desc" },
-    take: 3,
-  });
-
   const { firstHalf, secondHalf } = getContentParts(post.content);
   const formatDate = (date) => new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   const mainImagePath = getImageUrl(post.mainImage);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
+
+  // --- JSON-LD Schema Logic ---
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "image": post.mainImage?.startsWith('http') ? post.mainImage : `https://ik.imagekit.io/ag0dicbdub/${post.mainImage?.replace(/^\/+/, '')}`,
+    "datePublished": post.createdAt.toISOString(),
+    "dateModified": post.updatedAt.toISOString(),
+    "author": {
+      "@type": "Person",
+      "name": post.author?.name || "Maqbool",
+      "url": `${siteUrl}/legal/about-us`
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Wisemix Media",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/logo.png`
+      }
+    },
+    "description": post.metaDesc || post.shortDesc,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `${siteUrl}/blog/${post.slug}`
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Google Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      
       <CopyButtonScript />
       
       <style dangerouslySetInnerHTML={{ __html: `
@@ -92,7 +121,6 @@ export default async function PostPage({ params }) {
         .prose pre code { display: block; padding: 1.25rem; overflow: auto; max-height: 400px; color: #d4d4d4; font-size: 0.9rem; line-height: 1.6; }
         .prose img { border-radius: 12px; width: 100%; height: auto !important; margin: 2rem auto; }
         
-        /* لنکس کو نیلا کرنے کے لیے اسٹائل */
         .prose a { 
           color: #2563eb !important; 
           text-decoration: underline; 
@@ -112,7 +140,6 @@ export default async function PostPage({ params }) {
       `}} />
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-10">
-        
         <div className="ad-container text-center mb-6">
           <Advertisement page="post" position="content-top" />
         </div>
@@ -165,7 +192,7 @@ export default async function PostPage({ params }) {
             </div>
 
             <div className="mt-10 pt-8 border-t">
-              <SocialShare title={post.title} url={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`} />
+              <SocialShare title={post.title} url={`${siteUrl}/blog/${post.slug}`} />
             </div>
           </div>
         </article>
