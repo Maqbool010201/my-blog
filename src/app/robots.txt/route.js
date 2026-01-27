@@ -1,5 +1,5 @@
 // src/app/robots.txt/route.js - PRODUCTION READY
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const SITE_URL = 'https://www.wisemixmedia.com'; 
 
 export async function GET() {
   // SIMPLE FIX: Always allow for now to test, then fix detection later
