@@ -66,6 +66,8 @@ const getContentParts = (content) => {
 
 export default async function PostPage({ params }) {
   const { slug } = await params;
+  
+  // 1. Fetch the main post
   const post = await prisma.post.findUnique({
     where: { slug_siteId: { slug: slug, siteId: "wisemix" } },
     include: { category: true, author: true },
@@ -73,12 +75,29 @@ export default async function PostPage({ params }) {
 
   if (!post || !post.published) notFound();
 
+  // 2. Fetch Related Posts (from the same category)
+  const relatedPosts = await prisma.post.findMany({
+    where: {
+      siteId: "wisemix",
+      categoryId: post.categoryId,
+      published: true,
+      NOT: { id: post.id }, 
+    },
+    take: 3, 
+    select: {
+      title: true,
+      slug: true,
+      mainImage: true,
+      createdAt: true
+    }
+  });
+
   const { firstHalf, secondHalf } = getContentParts(post.content);
   const formatDate = (date) => new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   const mainImagePath = getImageUrl(post.mainImage);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
 
-  // --- JSON-LD Schema Logic ---
+  // JSON-LD Schema
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -108,7 +127,6 @@ export default async function PostPage({ params }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Google Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -120,23 +138,10 @@ export default async function PostPage({ params }) {
         .prose pre { background-color: #1e1e1e !important; margin: 1.5rem 0; position: relative; border-radius: 10px; border: 1px solid #333; overflow: hidden; }
         .prose pre code { display: block; padding: 1.25rem; overflow: auto; max-height: 400px; color: #d4d4d4; font-size: 0.9rem; line-height: 1.6; }
         .prose img { border-radius: 12px; width: 100%; height: auto !important; margin: 2rem auto; }
-        
-        .prose a { 
-          color: #2563eb !important; 
-          text-decoration: underline; 
-          font-weight: 500;
-        }
-        .prose a:hover { 
-          color: #1d4ed8 !important; 
-          text-decoration: none;
-        }
-
+        .prose a { color: #2563eb !important; text-decoration: underline; font-weight: 500; }
+        .prose a:hover { color: #1d4ed8 !important; text-decoration: none; }
         .ad-container { display: block; width: 100%; height: auto; transition: all 0.2s ease; }
-        .ad-container:not(:has(img, iframe, ins, a)) {
-          display: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
+        .ad-container:not(:has(img, iframe, ins, a)) { display: none !important; }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-10">
@@ -185,6 +190,34 @@ export default async function PostPage({ params }) {
                 </div>
                 <div className="prose prose-slate md:prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: secondHalf }} />
               </>
+            )}
+
+            {/* RELATED POSTS SECTION */}
+            {relatedPosts.length > 0 && (
+              <div className="mt-16 pt-10 border-t border-gray-100">
+                <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
+                  <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                  Related Posts
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPosts.map((rel) => (
+                    <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group block">
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
+                        <IKImage
+                          src={getImageUrl(rel.mainImage)}
+                          alt={rel.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 100vw, 300px"
+                        />
+                      </div>
+                      <h4 className="font-bold text-gray-800 group-hover:text-blue-600 line-clamp-2 text-sm md:text-base">
+                        {rel.title}
+                      </h4>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="ad-container mt-12 text-center">
