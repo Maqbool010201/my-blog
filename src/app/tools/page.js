@@ -1,9 +1,12 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Free Online Tools – WisemixMedia",
+  title: "Free Online Web Tools – Image Compressor, Resizer & PDF Tools | WisemixMedia",
   description:
-    "All free online web tools by WisemixMedia including Image Compressor, Image Resizer, PDF Generator, DPI 600 Converter, SEO tools, and more. Privacy-first, browser-based tools to optimize images and improve website performance.",
+    "Discover WisemixMedia's suite of free, privacy-first online tools. Compress images, resize photos, and convert images to 600 DPI PDF instantly in your browser. No uploads required.",
+  alternates: {
+    canonical: 'https://www.wisemixmedia.com/tools',
+  },
 };
 
 export default function ToolsPage() {
@@ -18,75 +21,85 @@ export default function ToolsPage() {
       </nav>
 
       {/* Hero Title */}
-      <h1 className="text-4xl font-extrabold mb-6 text-center">
-        Tools Hub
-      </h1>
-
-      {/* Description */}
-      <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-        Access all our privacy-first, browser-based tools to optimize images, convert files, improve SEO, and enhance website performance.
-        No uploads, no tracking — everything runs securely in your browser.
-      </p>
+      <header className="mb-12 text-center">
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-6">
+          Powerful & Private Online Tools
+        </h1>
+        <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+          Fast, secure, and browser-based tools to optimize your digital workflow. 
+          Everything runs locally on your device—your data never leaves your browser.
+        </p>
+      </header>
 
       {/* Tools Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
 
         {/* Image Compressor */}
         <Link
           href="/tools/image-compressor"
-          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1"
+          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 border border-gray-100"
         >
-          <h2 className="text-xl font-bold mb-2">Image Compressor</h2>
-          <p className="text-gray-600">
-            Compress JPG, PNG, and WebP images directly in your browser. No uploads, fast and secure.
+          <h2 className="text-xl font-bold mb-2">Online Image Compressor</h2>
+          <p className="text-gray-600 text-sm">
+            Reduce file size of JPG, PNG, and WebP images without losing quality. Perfect for web optimization.
           </p>
         </Link>
 
         {/* Image Resizer */}
         <Link
           href="/tools/image-resizer"
-          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1"
+          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 border border-gray-100"
         >
-          <h2 className="text-xl font-bold mb-2">Image Resizer</h2>
-          <p className="text-gray-600">
-            Resize images to any custom width and height instantly in your browser. Privacy-first and fully client-side.
+          <h2 className="text-xl font-bold mb-2">Pro Image Resizer</h2>
+          <p className="text-gray-600 text-sm">
+            Quickly change image dimensions to any custom width and height. High-quality output instantly.
           </p>
         </Link>
 
         {/* PDF Generator */}
         <Link
           href="/tools/pdf-generator"
-          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1"
+          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 border border-gray-100"
         >
-          <h2 className="text-xl font-bold mb-2">PDF Generator</h2>
-          <p className="text-gray-600">
-            Convert images to PDF instantly in your browser. Fully client-side, fast, and private.
+          <h2 className="text-xl font-bold mb-2">Image to PDF Converter</h2>
+          <p className="text-gray-600 text-sm">
+            Convert your photos and documents into professional PDF files directly in your browser.
           </p>
         </Link>
 
-        {/* DPI 600 Converter (FIXED PATH) */}
+        {/* DPI 600 Converter */}
         <Link
           href="/tools/dpi-pdf"
-          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1"
+          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 border border-gray-100"
         >
-          <h2 className="text-xl font-bold mb-2">DPI 600 Converter</h2>
-          <p className="text-gray-600">
-            Convert images to high-quality 600 DPI PDF files. Perfect for printing, forms, and professional documents.
+          <h2 className="text-xl font-bold mb-2">600 DPI PDF Converter</h2>
+          <p className="text-gray-600 text-sm">
+            The industry standard for printing. Convert images to high-resolution 600 DPI PDFs for professional use.
           </p>
         </Link>
 
-        {/* Future Tool */}
-        <Link
-          href="#"
-          className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 opacity-50 cursor-not-allowed"
-        >
-          <h2 className="text-xl font-bold mb-2">Coming Soon</h2>
-          <p className="text-gray-400">
-            More browser-based tools are coming soon. Stay tuned!
+        {/* Coming Soon */}
+        <div className="p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-300 opacity-75">
+          <h2 className="text-xl font-bold mb-2 text-gray-400">SEO Tools (Coming Soon)</h2>
+          <p className="text-gray-400 text-sm">
+            More tools for keyword research and meta tag generation are under development.
           </p>
-        </Link>
+        </div>
 
       </div>
+
+      {/* Bottom SEO Section */}
+      <article className="max-w-4xl mx-auto border-t pt-10 text-gray-700">
+         <h3 className="text-2xl font-bold mb-4">Why Use WisemixMedia Browser-Based Tools?</h3>
+         <p className="mb-4">
+           Unlike traditional online converters, WisemixMedia tools operate entirely within your web browser using modern JavaScript technologies like Next.js and Canvas API. This approach offers unparalleled <strong>privacy</strong> and <strong>speed</strong>.
+         </p>
+         <ul className="list-disc pl-5 space-y-2">
+           <li><strong>Privacy First:</strong> Your files are never uploaded to any server.</li>
+           <li><strong>Unlimited Use:</strong> No daily limits or subscriptions.</li>
+           <li><strong>Print Ready:</strong> Specialized tools like our DPI converter ensure your files are ready for professional printing.</li>
+         </ul>
+      </article>
     </div>
   );
 }

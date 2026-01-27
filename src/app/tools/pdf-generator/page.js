@@ -7,7 +7,7 @@ export const metadata = {
   description: 'Convert JPG and PNG images to PDF instantly in your browser. Privacy-first, no server uploads, and 100% free tool by WisemixMedia.',
   keywords: 'image to pdf, png to pdf, jpg to pdf converter, browser based pdf generator, WisemixMedia tools, convert photos to document',
   alternates: {
-    canonical: '/tools/pdf-generator',
+    canonical: 'https://www.wisemixmedia.com/tools/pdf-generator',
   },
 };
 
@@ -21,11 +21,13 @@ export default async function ToolsPage() {
       `${baseUrl}/api/advertisements?pageType=tool&isActive=true`,
       { next: { revalidate: 60 } }
     );
-    const ads = await res.json();
-    ads.forEach(a => {
-      const key = a.position.toLowerCase().trim().replace(/\s+/g, '-');
-      adsByPosition[key] = a;
-    });
+    if (res.ok) {
+      const ads = await res.json();
+      ads.forEach(a => {
+        const key = a.position.toLowerCase().trim().replace(/\s+/g, '-');
+        adsByPosition[key] = a;
+      });
+    }
   } catch (err) {
     console.error("Tool Ad Fetch Error:", err);
   }
@@ -43,8 +45,8 @@ export default async function ToolsPage() {
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900 tracking-tight">
           Free Image to PDF Converter
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Convert your photos into professional PDF documents instantly. No registration, no watermarks.
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto text-balance">
+          Convert your photos into professional PDF documents instantly. No registration, no watermarks, and 100% secure.
         </p>
       </header>
 
@@ -73,13 +75,11 @@ export default async function ToolsPage() {
         />
       </div>
 
-      {/* 4. LONG SEO ARTICLE (800+ Words Structure) */}
+      {/* 4. LONG SEO ARTICLE */}
       <article className="prose prose-slate lg:prose-lg max-w-4xl mx-auto border-t pt-10">
         <h2 className="text-3xl font-bold text-gray-800 text-center mb-10">The Most Secure Way to Convert Images to PDF Online</h2>
         
         <p>Whether you are a student submitting an assignment, a freelancer sending an invoice, or a professional archiving receipts, the need for a reliable <strong>Image to PDF converter</strong> is universal. While many online services offer this feature, most require you to upload your files to their servers. At WisemixMedia, we provide a faster, safer, and 100% private solution.</p>
-
-        
 
         <h3 className="text-2xl font-semibold mt-8">1. Why Privacy-First PDF Generation Matters</h3>
         <p>Documents often contain sensitive information—IDs, signatures, or personal data. Using a standard cloud-based converter means your files are temporarily stored on a server you don't control. Our <strong>PDF Generator</strong> uses client-side JavaScript. Your images are processed directly in your browser's memory and converted into a PDF file locally. Your data never leaves your computer, ensuring absolute confidentiality.</p>
@@ -90,22 +90,20 @@ export default async function ToolsPage() {
         <h3 className="text-2xl font-semibold mt-8">3. Optimizing for SEO and Speed</h3>
         <p>From a technical standpoint, serving content via PDF is often preferred for long-form whitepapers or downloadable guides. By using our tool to bundle images, you reduce the number of HTTP requests a browser needs to make compared to loading individual images. This contributes to better <strong>Core Web Vitals</strong> for sites that offer downloadable resources.</p>
 
-        
-
         <h3 className="text-2xl font-semibold mt-8">4. How to Use the PDF Generator</h3>
         <p>Using the WisemixMedia tool is straightforward and requires no technical skill:</p>
         <ol className="list-decimal pl-6 mb-6">
-          <li><strong>Select Images:</strong> Click the upload button and pick your PNG or JPG files.</li>
-          <li><strong>Instant Processing:</strong> Our local script prepares the document structure.</li>
-          <li><strong>Generate & Save:</strong> Click the generate button and your browser will prompt you to save the PDF.</li>
+          <li><strong>Select Images:</strong> Click the upload button and pick your PNG or JPG files from your device.</li>
+          <li><strong>Instant Processing:</strong> Our local script prepares the document structure in seconds.</li>
+          <li><strong>Generate & Save:</strong> Click the generate button and your browser will prompt you to save the PDF file.</li>
         </ol>
 
         <h3 className="text-2xl font-semibold mt-8">5. Supported Formats and Use Cases</h3>
         <p>Our tool supports the most common web image formats, including <strong>JPEG, JPG, and PNG</strong>. Common use cases include:</p>
         <ul className="list-disc pl-6 mb-6">
           <li>Converting smartphone photos of physical documents into PDF scans.</li>
-          <li>Combining multiple screenshots into a single report.</li>
-          <li>Preparing graphics for professional printing.</li>
+          <li>Combining multiple screenshots into a single report or presentation.</li>
+          <li>Preparing graphics for professional printing and archival storage.</li>
         </ul>
 
         <h3 className="text-2xl font-semibold mt-8">6. Why Every Remote Worker Needs This Tool</h3>
@@ -115,23 +113,23 @@ export default async function ToolsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8 not-prose">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
             <span className="block font-bold text-blue-900 mb-1">🔒 Zero Uploads</span>
-            100% private. Your files stay on your device throughout the process.
+            100% private. Your files stay on your device throughout the entire process.
           </div>
           <div className="bg-green-50 p-4 rounded-lg border border-green-100">
             <span className="block font-bold text-green-900 mb-1">⚡ Instant Results</span>
-            No server wait times. Download your PDF as soon as you click generate.
+            No server wait times. Download your PDF as soon as you click the generate button.
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
             <span className="block font-bold text-yellow-900 mb-1">💎 No Watermarks</span>
-            Clean, professional documents ready for business or academic use.
+            Clean, professional documents ready for business, legal, or academic use.
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <span className="block font-bold text-purple-900 mb-1">🌍 Cross-Platform</span>
-            Works in any modern browser without installing any software.
+            Works in any modern browser on mobile or desktop without installing software.
           </div>
         </div>
 
-        <p className="mt-8">Simplify your document workflow today with the WisemixMedia Image to PDF Converter. It is the fastest, safest, and most efficient way to turn your visual files into digital documents.</p>
+        <p className="mt-8 text-center font-medium">Simplify your document workflow today with the WisemixMedia Image to PDF Converter. It is the fastest, safest, and most efficient way to turn your visual files into digital documents.</p>
       </article>
 
       {/* JSON-LD Schema */}
@@ -142,6 +140,7 @@ export default async function ToolsPage() {
         "operatingSystem": "Web",
         "applicationCategory": "UtilitiesApplication",
         "description": "Convert images to PDF locally in the browser with total privacy.",
+        "url": "https://www.wisemixmedia.com/tools/pdf-generator",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       })}} />
     </main>
