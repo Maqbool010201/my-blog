@@ -75,20 +75,21 @@ export default async function PostPage({ params }) {
 
   if (!post || !post.published) notFound();
 
-  // 2. Fetch Related Posts (from the same category)
-  const relatedPosts = await prisma.post.findMany({
+  // 2. Fetch the 6 LATEST posts globally (Latest Updates)
+  const latestPosts = await prisma.post.findMany({
     where: {
       siteId: "wisemix",
-      categoryId: post.categoryId,
       published: true,
-      NOT: { id: post.id }, 
+      NOT: { id: post.id }, // Exclude current post
     },
-    take: 3, 
+    take: 6, 
+    orderBy: { createdAt: 'desc' },
     select: {
       title: true,
       slug: true,
       mainImage: true,
-      createdAt: true
+      createdAt: true,
+      category: { select: { name: true } }
     }
   });
 
@@ -97,41 +98,8 @@ export default async function PostPage({ params }) {
   const mainImagePath = getImageUrl(post.mainImage);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
 
-  // JSON-LD Schema
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": post.title,
-    "image": post.mainImage?.startsWith('http') ? post.mainImage : `https://ik.imagekit.io/ag0dicbdub/${post.mainImage?.replace(/^\/+/, '')}`,
-    "datePublished": post.createdAt.toISOString(),
-    "dateModified": post.updatedAt.toISOString(),
-    "author": {
-      "@type": "Person",
-      "name": post.author?.name || "Maqbool",
-      "url": `${siteUrl}/legal/about-us`
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Wisemix Media",
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${siteUrl}/logo.png`
-      }
-    },
-    "description": post.metaDesc || post.shortDesc,
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": `${siteUrl}/blog/${post.slug}`
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      
       <CopyButtonScript />
       
       <style dangerouslySetInnerHTML={{ __html: `
@@ -192,28 +160,37 @@ export default async function PostPage({ params }) {
               </>
             )}
 
-            {/* RELATED POSTS SECTION */}
-            {relatedPosts.length > 0 && (
+            {/* LATEST POSTS GRID */}
+            {latestPosts.length > 0 && (
               <div className="mt-16 pt-10 border-t border-gray-100">
-                <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-                  <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
-                  Related Posts
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {relatedPosts.map((rel) => (
-                    <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group block">
-                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                    Latest from Wisemix Media
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {latestPosts.map((rel) => (
+                    <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group flex flex-col">
+                      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 mb-4 shadow-sm border border-gray-50">
                         <IKImage
                           src={getImageUrl(rel.mainImage)}
                           alt={rel.title}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                           sizes="(max-width: 768px) 100vw, 300px"
                         />
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-white/90 backdrop-blur-sm text-[10px] font-bold px-2 py-0.5 rounded text-blue-600 uppercase">
+                            {rel.category?.name}
+                          </span>
+                        </div>
                       </div>
-                      <h4 className="font-bold text-gray-800 group-hover:text-blue-600 line-clamp-2 text-sm md:text-base">
+                      <h4 className="font-bold text-gray-800 group-hover:text-blue-600 line-clamp-2 leading-snug mb-1 text-sm md:text-base">
                         {rel.title}
                       </h4>
+                      <span className="text-[11px] text-gray-400 font-medium">{formatDate(rel.createdAt)}</span>
                     </Link>
                   ))}
                 </div>
