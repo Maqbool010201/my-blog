@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
+import { GoogleAnalytics } from '@next/third-parties/google'; // 1. یہ لائن ایڈ کی ہے
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,6 @@ const geistMono = Geist_Mono({
   display: 'swap' 
 });
 
-// یہاں ہم نے verification شامل کی ہے
 export const metadata = {
   title: {
     default: 'Wise Mix Media | Insightful Content for Growth',
@@ -69,6 +69,8 @@ export default async function RootLayout({ children }) {
           </main>
           <Footer />
         </Providers>
+        {/* 2. یہاں گوگل اینالیٹکس آئی ڈی ایڈ کر دی ہے */}
+        <GoogleAnalytics gaId="G-7Z28QL2KWG" />
       </body>
     </html>
   );
