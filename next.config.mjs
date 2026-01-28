@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // turbopack ہٹا دیا گیا ہے کیونکہ یہ ورژن 15 میں سپورٹڈ نہیں ہے
-  
   images: {
     loader: 'custom',
     loaderFile: './src/lib/imagekitLoader.js',
@@ -22,7 +20,6 @@ const nextConfig = {
   compress: true,
 
   experimental: {
-    // optimizeCss کو فی الحال ہٹا دیا ہے کیونکہ یہ بلڈ میں کبھی کبھی مسئلہ کرتا ہے
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
@@ -33,6 +30,42 @@ const nextConfig = {
 
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  // --- ری ڈائریکٹس یہاں سے شروع ہوتے ہیں ---
+  async redirects() {
+    return [
+      {
+        source: '/why-hair-falls-out-on-the-keto-diet-and-how-to-prevent-it',
+        destination: '/tools/image-resizer',
+        permanent: true,
+      },
+      {
+        source: '/blogs/why-hair-falls-out-on-the-keto-diet-and-how-to-prevent-it',
+        destination: '/tools/image-resizer',
+        permanent: true,
+      },
+      {
+        source: '/keto-diet-for-weight-gain-expert-tips-supplements-and-common-questions',
+        destination: '/tools/image-compressor',
+        permanent: true,
+      },
+      {
+        source: '/category/:path*',
+        destination: '/tools',
+        permanent: true,
+      },
+      {
+        source: '/blogs',
+        destination: '/tools',
+        permanent: true,
+      },
+      {
+        source: '/blogs/',
+        destination: '/tools',
+        permanent: true,
+      }
+    ];
   },
 
   async headers() {
