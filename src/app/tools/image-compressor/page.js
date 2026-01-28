@@ -42,7 +42,7 @@ export default async function ImageCompressorPage() {
 
       <header className="max-w-4xl mx-auto text-center mb-10">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900 tracking-tight">
-          Professional Online Image Compressor
+          Free Online Image Compressor
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto text-balance">
           The ultimate browser-based tool for lightning-fast image optimization. Reduce file size without losing quality.
