@@ -1,16 +1,18 @@
+// src/app/layout.js
 import './globals.css';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
-import { GoogleAnalytics } from '@next/third-parties/google'; // 1. یہ لائن ایڈ کی ہے
+import { GoogleAnalytics } from '@next/third-parties/google';
 
-export const dynamic = 'force-dynamic';
+// 'force-dynamic' کو ہٹا کر اسے استعمال کریں تاکہ پیج کیشے ہو سکے (Speed Improve)
+export const revalidate = 60; 
 
 const geistSans = Geist({ 
   variable: '--font-geist-sans', 
   subsets: ['latin'], 
-  display: 'swap' 
+  display: 'swap' // CLS کے لیے ضروری ہے
 });
 
 const geistMono = Geist_Mono({ 
@@ -37,6 +39,7 @@ async function getCategories() {
   if (!baseUrl) return [];
 
   try {
+    // یہاں ہم نے cache کو بہتر کیا ہے تاکہ LCP تیز ہو
     const res = await fetch(`${baseUrl}/api/categories`, { 
       next: { revalidate: 3600 } 
     });
@@ -54,6 +57,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        {/* LCP کو بہتر بنانے کے لیے ہیرو امیج کو پری لوڈ کریں */}
         <link 
           rel="preload" 
           as="image" 
@@ -69,7 +73,6 @@ export default async function RootLayout({ children }) {
           </main>
           <Footer />
         </Providers>
-        {/* 2. یہاں گوگل اینالیٹکس آئی ڈی ایڈ کر دی ہے */}
         <GoogleAnalytics gaId="G-7Z28QL2KWG" />
       </body>
     </html>
