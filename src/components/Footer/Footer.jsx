@@ -9,14 +9,13 @@ export default async function Footer() {
   let socialLinks = [];
 
   try {
-    // ہم ڈیٹا فیچ کر رہے ہیں
+    // ہم cache: 'no-store' استعمال کر رہے ہیں تاکہ ڈیٹا بیس سے تازہ ترین ڈیٹا ملے
     const [legalRes, catRes, socialRes] = await Promise.all([
-      fetch(`${baseUrl}/api/legal-pages?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
-      fetch(`${baseUrl}/api/categories?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
+      fetch(`${baseUrl}/api/legal-pages?siteId=wisemix`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/api/categories?siteId=wisemix`, { cache: 'no-store' }).catch(() => null),
       fetch(`${baseUrl}/api/admin/social-links?siteId=wisemix`, { cache: 'no-store' }).catch(() => null),
     ]);
 
-    // ڈیٹا کو محفوظ طریقے سے نکالنا (Safe Parsing)
     if (legalRes?.ok) {
       const data = await legalRes.json();
       legalPages = Array.isArray(data) ? data.slice(0, 10) : [];
@@ -29,7 +28,8 @@ export default async function Footer() {
 
     if (socialRes?.ok) {
       const data = await socialRes.json();
-      socialLinks = data?.links || [];
+      // چیک کریں کہ API کا رسپانس کیسا ہے (data یا data.links)
+      socialLinks = data?.links || (Array.isArray(data) ? data : []);
     }
 
   } catch (error) {
@@ -49,14 +49,14 @@ export default async function Footer() {
             </h3>
             <p className="text-gray-400 mb-6 max-w-sm text-sm leading-relaxed">
               Your premier destination for diverse insights and trending stories.
-              Delivering high-quality content across multiple niches.
             </p>
             <div className="flex items-center">
+              {/* سوشل آئیکونز یہاں نظر آئیں گے */}
               <FooterSocialIcons links={socialLinks} />
             </div>
           </div>
 
-          <nav aria-label="Footer navigation" className="col-span-1">
+          <nav className="col-span-1">
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Quick Links</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
               <li><Link href="/" className="hover:text-blue-400 transition-colors">Home</Link></li>
@@ -64,12 +64,11 @@ export default async function Footer() {
             </ul>
           </nav>
 
-          <nav aria-label="Legal pages" className="col-span-1">
+          <nav className="col-span-1">
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Legal</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
               <li><Link href="/sitemap.xml" className="hover:text-white">Sitemap</Link></li>
-              <li><Link href="/robots.txt" className="hover:text-white">Robots.txt</Link></li>
-              {legalPages.length > 0 && legalPages.map((page) => (
+              {legalPages.map((page) => (
                 <li key={page.id}>
                   <Link href={`/legal/${page.slug}`} className="hover:text-blue-400 transition-colors">
                     {page.title}
@@ -79,12 +78,12 @@ export default async function Footer() {
             </ul>
           </nav>
 
-          <nav aria-label="Categories" className="col-span-1 md:col-span-1">
+          <nav className="col-span-1">
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Categories</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
-              {categories.length > 0 && categories.map((cat) => (
+              {categories.map((cat) => (
                 <li key={cat.id}>
-                  <Link href={`/category/${cat.slug}`} className="hover:text-blue-400 transition-colors">
+                  <Link href={`/category/${cat.slug}`} className="hover:text-blue-400 transition-colors capitalize">
                     {cat.name}
                   </Link>
                 </li>

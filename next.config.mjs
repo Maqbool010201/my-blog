@@ -32,7 +32,6 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
-  // --- ری ڈائریکٹس یہاں سے شروع ہوتے ہیں ---
   async redirects() {
     return [
       {
@@ -50,57 +49,12 @@ const nextConfig = {
         destination: '/tools/image-compressor',
         permanent: true,
       },
-      {
-        source: '/category/:path*',
-        destination: '/tools',
-        permanent: true,
-      },
-      {
-        source: '/blogs',
-        destination: '/tools',
-        permanent: true,
-      },
-      {
-        source: '/blogs/',
-        destination: '/tools',
-        permanent: true,
-      }
+      // نوٹ: ہم نے یہاں سے /category/:path* والی ری ڈائریکٹ ہٹا دی ہے تاکہ آپ کی نئی کیٹیگریز کام کریں
     ];
   },
 
   async headers() {
     return [
-      {
-        source: '/uploads/:year/:month/:day/:file',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/uploads/:path*',
-        headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-        ],
-      },
       {
         source: '/api/:path*',
         headers: [
