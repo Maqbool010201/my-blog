@@ -28,7 +28,7 @@ export async function generateMetadata({ params }) {
 
   return {
     title: post.metaTitle || post.title,
-    description: post.metaDesc || post.shortDesc || "Read more about this post.",
+    description: (post.metaDesc || post.shortDesc || "Read more about this post.").replace(/<[^>]*>?/gm, '').substring(0, 160),
     alternates: { canonical: `${siteUrl}/blog/${post.slug}` },
     openGraph: {
       title: post.ogTitle || post.title,
@@ -40,9 +40,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-/**
- * Helper to Clean Image Path
- */
 const getImageUrl = (imgData) => {
   if (!imgData) return ""; 
   let path = typeof imgData === "object" ? imgData.mainImage : imgData;
@@ -67,7 +64,6 @@ const getContentParts = (content) => {
 export default async function PostPage({ params }) {
   const { slug } = await params;
   
-  // 1. Fetch the main post
   const post = await prisma.post.findUnique({
     where: { slug_siteId: { slug: slug, siteId: "wisemix" } },
     include: { category: true, author: true },
@@ -75,14 +71,14 @@ export default async function PostPage({ params }) {
 
   if (!post || !post.published) notFound();
 
-  // 2. Fetch the 6 LATEST posts globally (Latest Updates)
+  // 1. Fetch exactly 4 latest posts
   const latestPosts = await prisma.post.findMany({
     where: {
       siteId: "wisemix",
       published: true,
-      NOT: { id: post.id }, // Exclude current post
+      NOT: { id: post.id },
     },
-    take: 6, 
+    take: 4, 
     orderBy: { createdAt: 'desc' },
     select: {
       title: true,
@@ -108,8 +104,6 @@ export default async function PostPage({ params }) {
         .prose img { border-radius: 12px; width: 100%; height: auto !important; margin: 2rem auto; }
         .prose a { color: #2563eb !important; text-decoration: underline; font-weight: 500; }
         .prose a:hover { color: #1d4ed8 !important; text-decoration: none; }
-        .ad-container { display: block; width: 100%; height: auto; transition: all 0.2s ease; }
-        .ad-container:not(:has(img, iframe, ins, a)) { display: none !important; }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-10">
@@ -160,49 +154,44 @@ export default async function PostPage({ params }) {
               </>
             )}
 
-            {/* LATEST POSTS GRID */}
+            {/* SOCIAL SHARE AT THE END OF BLOG CONTENT */}
+            <div className="mt-10 pt-6 border-t border-gray-100">
+               <p className="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider text-center">Share this article:</p>
+               <SocialShare title={post.title} url={`${siteUrl}/blog/${post.slug}`} />
+            </div>
+
+            {/* LATEST RELATED POSTS GRID (4 Posts, 2 columns on mobile) */}
             {latestPosts.length > 0 && (
-              <div className="mt-16 pt-10 border-t border-gray-100">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
-                    Latest from Wisemix Media
-                  </h3>
-                </div>
+              <div className="mt-12 pt-10 border-t border-gray-100">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2 mb-8">
+                  <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
+                  Latest from Wisemix Media
+                </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                   {latestPosts.map((rel) => (
                     <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group flex flex-col">
-                      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 mb-4 shadow-sm border border-gray-50">
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3 shadow-sm border border-gray-50">
                         <IKImage
                           src={getImageUrl(rel.mainImage)}
                           alt={rel.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          sizes="(max-width: 768px) 100vw, 300px"
+                          sizes="(max-width: 768px) 50vw, 200px"
                         />
-                        <div className="absolute top-2 left-2">
-                          <span className="bg-white/90 backdrop-blur-sm text-[10px] font-bold px-2 py-0.5 rounded text-blue-600 uppercase">
-                            {rel.category?.name}
-                          </span>
-                        </div>
                       </div>
-                      <h4 className="font-bold text-gray-800 group-hover:text-blue-600 line-clamp-2 leading-snug mb-1 text-sm md:text-base">
+                      <h4 className="font-bold text-gray-800 group-hover:text-blue-600 line-clamp-2 leading-tight mb-1 text-[11px] md:text-base">
                         {rel.title}
                       </h4>
-                      <span className="text-[11px] text-gray-400 font-medium">{formatDate(rel.createdAt)}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{formatDate(rel.createdAt)}</span>
                     </Link>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="ad-container mt-12 text-center">
+            <div className="ad-container mt-12 text-center border-t pt-8">
               <Advertisement page="post" position="content-bottom" />
-            </div>
-
-            <div className="mt-10 pt-8 border-t">
-              <SocialShare title={post.title} url={`${siteUrl}/blog/${post.slug}`} />
             </div>
           </div>
         </article>
