@@ -3,7 +3,7 @@ import StaticHero from "@/components/Hero/StaticHero";
 import FeaturedPosts from "@/components/FeaturedPosts/FeaturedPosts";
 import LatestPosts from "@/components/LatestPosts/LatestPosts";
 import Sidebar from "@/components/Sidebar/Sidebar";
-export const revalidate = 60;
+export const revalidate = 3600;
 export default async function HomePage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const pageNumber = Number(resolvedSearchParams?.page ?? 1);
