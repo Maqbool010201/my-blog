@@ -2,27 +2,34 @@ import Link from 'next/link';
 import FooterSocialIcons from './FooterSocialIcons';
 
 export default async function Footer() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.wisemixmedia.com';
 
   let legalPages = [];
   let categories = [];
   let socialLinks = [];
 
   try {
-    // ہم نے cache: 'no-store' ہٹا کر revalidate لگایا ہے تاکہ سرور تیز ہو
+    // ڈیٹا کو کیش کریں تاکہ ہر بار سرور ڈیٹا بیس پر بوجھ نہ ڈالے
     const [legalRes, catRes, socialRes] = await Promise.all([
       fetch(`${baseUrl}/api/legal-pages?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
       fetch(`${baseUrl}/api/categories?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
       fetch(`${baseUrl}/api/admin/social-links?siteId=wisemix`, { next: { revalidate: 3600 } }).catch(() => null),
     ]);
 
-    if (legalRes?.ok) legalPages = (await legalRes.json()).slice(0, 10);
-    if (catRes?.ok) categories = (await catRes.json()).slice(0, 10);
-    if (socialRes?.ok) {
-        const data = await socialRes.json();
-        socialLinks = data?.links || (Array.isArray(data) ? data : []);
+    if (legalRes?.ok) {
+      const data = await legalRes.json();
+      legalPages = Array.isArray(data) ? data.slice(0, 10) : [];
     }
 
+    if (catRes?.ok) {
+      const data = await catRes.json();
+      categories = Array.isArray(data) ? data.slice(0, 10) : [];
+    }
+
+    if (socialRes?.ok) {
+      const data = await socialRes.json();
+      socialLinks = data?.links || (Array.isArray(data) ? data : []);
+    }
   } catch (error) {
     console.error('Footer data fetch error:', error);
   }
@@ -33,6 +40,8 @@ export default async function Footer() {
     <footer className="w-full bg-[#0b1221] text-white py-12 border-t border-gray-800 mt-auto">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6">
+
+          {/* Brand Section */}
           <div className="col-span-2">
             <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               Wisemix Media
@@ -44,7 +53,8 @@ export default async function Footer() {
               <FooterSocialIcons links={socialLinks} />
             </div>
           </div>
-          {/* ... Rest of your navigation code remains same ... */}
+
+          {/* Quick Links */}
           <nav className="col-span-1">
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Quick Links</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
@@ -52,7 +62,43 @@ export default async function Footer() {
               <li><Link href="/contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
             </ul>
           </nav>
-          {/* ... legal and categories maps ... */}
+
+          {/* Legal Pages */}
+          <nav className="col-span-1">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Legal</h4>
+            <ul className="space-y-3 text-gray-400 text-sm">
+              <li><Link href="/sitemap.xml" className="hover:text-white transition-colors">Sitemap</Link></li>
+              <li><Link href="/robots.txt" className="hover:text-white transition-colors">Robots</Link></li>
+              {legalPages.map((page) => (
+                <li key={page.id}>
+                  <Link href={`/legal/${page.slug}`} className="hover:text-blue-400 transition-colors">
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Categories */}
+          <nav className="col-span-1">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Categories</h4>
+            <ul className="space-y-3 text-gray-400 text-sm">
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <Link href={`/category/${cat.slug}`} className="hover:text-blue-400 transition-colors capitalize">
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 mt-12 pt-8 text-center md:text-left">
+          <p className="text-gray-400 text-sm">
+            © {year} <span className="font-semibold text-gray-200">Wisemix Media</span>. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
