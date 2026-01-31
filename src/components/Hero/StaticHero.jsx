@@ -4,25 +4,24 @@ import Image from 'next/image';
 export default function StaticHero() {
   // q-auto اور f-auto امیج کٹ کو بہترین فارمیٹ چننے دیں گے
   // w-1000 ڈیسک ٹاپ کے لیے کافی ہے، موبائل پر Next.js خود اسے چھوٹا کر دے گا
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-1000,q-auto,f-auto"; 
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-1000,q-auto,f-auto";
 
   return (
     <section className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden bg-[#0a192f]">
       <Image
-        src={heroImageUrl}
         alt="Wise Mix Media"
-        fill
+        src="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-800,q-80,f-auto" // فکسڈ سائز برائے موبائل
         priority
-        loading="eager" // براؤزر کو فوری لوڈ کرنے پر مجبور کرتا ہے
+        fill
         fetchPriority="high"
-        decoding="sync" // رینڈرنگ ڈیلے ختم کرنے کے لیے
-        className="object-cover object-right md:object-center opacity-70"
+        loading="eager"
         sizes="(max-width: 768px) 100vw, 100vw"
+        className="object-cover opacity-70"
       />
-      
+
       {/* Optimized Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:bg-gradient-to-r md:from-white/90 md:to-transparent z-[1]" />
-      
+
       <div className="relative z-10 container mx-auto h-full px-4 flex items-center justify-center md:justify-start">
         <div className="max-w-xl text-center md:text-left pt-4">
           <span className="inline-block mb-1 text-[9px] font-bold tracking-[0.2em] uppercase text-blue-400 md:text-blue-600 bg-black/20 md:bg-transparent px-2 py-0.5 rounded">
