@@ -7,7 +7,7 @@ import CopyButtonScript from "@/components/CopyButtonScript";
 import IKImage from "@/components/IKImage"; 
 import "highlight.js/styles/atom-one-dark.css";
 
-export const revalidate = 60; 
+export const revalidate = 3600; 
 
 /**
  * SEO Metadata Generator
