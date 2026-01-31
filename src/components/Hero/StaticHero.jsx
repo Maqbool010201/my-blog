@@ -4,19 +4,19 @@ import Image from 'next/image';
 export default function StaticHero() {
   // q-auto اور f-auto امیج کٹ کو بہترین فارمیٹ چننے دیں گے
   // w-1000 ڈیسک ٹاپ کے لیے کافی ہے، موبائل پر Next.js خود اسے چھوٹا کر دے گا
-  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-1000,q-auto,f-auto";
+  const heroImageUrl = "https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp?tr=w-1000,q-auto,f-auto";
 
   return (
     <section className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden bg-[#0a192f]">
       <Image
         alt="Wise Mix Media"
-        src="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.png?tr=w-800,q-80,f-auto" // فکسڈ سائز برائے موبائل
+        src="https://ik.imagekit.io/ag0dicbdub/uploads/hero6.webp"
         priority
         fill
-        fetchPriority="high"
-        loading="eager"
-        sizes="(max-width: 768px) 100vw, 100vw"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // یہ براؤزر کو بتائے گا کہ موبائل پر چھوٹی امیج لینی ہے
         className="object-cover opacity-70"
+        placeholder="blur"
+        blurDataURL="data:image/png;base64,imagedata..." // لوڈنگ کے وقت ہلکی امیج
       />
 
       {/* Optimized Overlay */}
