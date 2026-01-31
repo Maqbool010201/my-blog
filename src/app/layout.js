@@ -4,7 +4,9 @@ import Providers from './providers';
 import Footer from '@/components/Footer/Footer';
 import Menu from '@/components/Header/Menu/Menu';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { Suspense } from 'react';
 
+// Fonts optimization
 const geistSans = Geist({ 
   variable: '--font-geist-sans', 
   subsets: ['latin'], 
@@ -34,11 +36,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* اسپیڈ بہتر کرنے کے لیے یہ لائنز بہت ضروری ہیں */}
+        {/* DNS Preconnect: ImageKit کے کنکشن کو تیز بنانے کے لیے */}
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://ik.imagekit.io" />
         
-        {/* ہیرو امیج کو پہلے سے لوڈ کریں - یقینی بنائیں کہ لنک وہی ہو جو StaticHero میں ہے */}
+        {/* Preload Hero Image: یہ LCP کو بہتر کرے گا */}
         <link 
           rel="preload" 
           as="image" 
@@ -48,13 +50,20 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Providers>
-          {/* @ts-expect-error Server Component */}
-          <Menu /> 
-          <main className="grow w-full">
+          {/* Suspense: مینو کا ڈیٹا لوڈ ہونے تک یہ پیج کو بلاک نہیں کرے گا */}
+          <Suspense fallback={<div className="h-16 bg-white border-b border-gray-100 w-full animate-pulse" />}>
+            <Menu />
+          </Suspense>
+
+          {/* min-h-[70vh]: یہ CLS کو ختم کرے گا کیونکہ یہ مین مواد کے لیے پہلے سے جگہ محفوظ کر لے گا */}
+          <main className="grow w-full min-h-[70vh]">
             {children}
           </main>
+
           <Footer />
         </Providers>
+
+        {/* Google Analytics: یہ آخر میں لوڈ ہوگا تاکہ اسپیڈ متاثر نہ ہو */}
         <GoogleAnalytics gaId="G-7Z28QL2KWG" />
       </body>
     </html>
