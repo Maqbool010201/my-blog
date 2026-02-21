@@ -1,19 +1,17 @@
-// src/app/admin/create/page.jsx
-"use client";
-
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
 import CreateAdminForm from "./CreateAdminForm";
 
-export default function CreateAdminPage() {
+export default async function CreateAdminPage() {
+  const adminCount = await prisma.admin.count();
+
+  if (adminCount > 0) {
+    redirect("/admin/login?setup=locked");
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Suspense fallback={
-        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-          <div className="text-center py-8">Loading...</div>
-        </div>
-      }>
-        <CreateAdminForm />
-      </Suspense>
+      <CreateAdminForm />
     </div>
   );
 }

@@ -1,33 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { resolveSiteId } from "@/lib/site";
 
-export async function GET(req) {
+export async function GET() {
   try {
-    // 1. سیشن چیک کریں تاکہ پتہ چلے کون سا کلائنٹ لاگ ان ہے
     const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user?.siteId) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
     }
 
-    // 2. صرف اس مخصوص سائٹ کے سبسکرائبرز حاصل کریں
+    const siteId = resolveSiteId(session.user?.siteId);
     const subscribers = await prisma.newsletterSubscriber.findMany({
-      where: {
-        siteId: session.user.siteId // فلٹر لگانا لازمی ہے
-      },
-      orderBy: { createdAt: "desc" }
+      where: { siteId },
+      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ 
-      success: true,
-      count: subscribers.length,
-      subscribers 
-    }, { status: 200 });
-
+    return NextResponse.json(
+      { success: true, count: subscribers.length, subscribers },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Admin Newsletter GET error:", error);
+    console.error("Admin newsletter GET error:", error);
     return NextResponse.json({ error: "Failed to fetch subscribers" }, { status: 500 });
   }
 }

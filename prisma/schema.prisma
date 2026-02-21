@@ -50,6 +50,7 @@ model Post {
   authorId    Int
   published   Boolean  @default(false)
   featured    Boolean  @default(false)
+  editingPolicy String @default("OWNER_ONLY") // OWNER_ONLY | SUPER_ADMIN_CONTENT_ONLY
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -170,4 +171,30 @@ model SocialLink {
   updatedAt DateTime @updatedAt
 
   @@unique([platform, siteId])
+}
+
+model SiteSetting {
+  id                     String   @id @default(cuid())
+  siteId                 String   @unique
+  siteName               String?
+  logoUrl                String?
+  logoAlt                String?
+  logoDisplay            String?  @default("IMAGE_AND_TEXT") // IMAGE_ONLY | TEXT_ONLY | IMAGE_AND_TEXT
+  logoWidth              Int?     @default(180)
+  logoHeight             Int?     @default(48)
+  storageProvider        String?  @default("LOCAL") // LOCAL | IMAGEKIT | CLOUDINARY
+  imageKitPublicKey      String?
+  imageKitPrivateKey     String?
+  imageKitUrlEndpoint    String?
+  imageKitFolder         String?
+  cloudinaryCloudName    String?
+  cloudinaryApiKey       String?
+  cloudinaryApiSecret    String?
+  cloudinaryFolder       String?
+  googleSiteVerification String?
+  googleAdsenseClientId  String?
+  googleAnalyticsId      String?
+  adsTxtContent          String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }

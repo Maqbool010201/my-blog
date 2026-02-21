@@ -22,7 +22,7 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
 
   // --- SEO BREADCRUMB CONFIG ---
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

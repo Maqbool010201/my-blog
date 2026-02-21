@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import RichTextEditor from "@/components/RichTextEditor";
-
-// ImageKit public endpoint
-const IMAGEKIT_ENDPOINT = "https://ik.imagekit.io/ag0dicbdub";
+import { resolveImageUrl } from "@/lib/resolveImageUrl";
+import { DEFAULT_SITE_ID } from "@/lib/site";
+import { compressToWebp } from "@/lib/compressToWebp";
+import { getAdminPermissions, POST_EDITING_POLICIES } from "@/lib/adminPermissions";
 
 export default function EditPost() {
   const router = useRouter();
   const params = useParams();
+  const { data: session, status } = useSession();
+  const perms = getAdminPermissions(session?.user?.role);
   const slug = params?.slug; // ڈائینامک سلگ حاصل کرنا
 
   const [formData, setFormData] = useState({
@@ -26,6 +30,7 @@ export default function EditPost() {
     categoryId: "",
     status: "published",
     featured: false,
+    editingPolicy: POST_EDITING_POLICIES.OWNER_ONLY,
   });
 
   const [categories, setCategories] = useState([]);
@@ -37,24 +42,41 @@ export default function EditPost() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const canPublishPost = Boolean(perms.canPublishPost);
+  const isSuperAdmin = perms.role === "SUPER_ADMIN";
+  const isContentOnlyEdit =
+    !canPublishPost && formData.editingPolicy === POST_EDITING_POLICIES.SUPER_ADMIN_CONTENT_ONLY;
 
   /* ---------------- 1. Load Categories ---------------- */
   useEffect(() => {
     fetch("/api/categories")
-      .then((res) => res.json())
-      .then(setCategories)
-      .catch(() => setError("Failed to load categories"));
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to load categories");
+        return data;
+      })
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch((err) => setError(err.message || "Failed to load categories"));
   }, []);
 
   /* ---------------- 2. Load Post Data ---------------- */
   useEffect(() => {
     if (!slug) return;
+    if (status === "loading") return;
+    if (status !== "authenticated") {
+      setError("Please login to edit posts.");
+      setLoading(false);
+      router.push("/admin/login");
+      return;
+    }
 
     const loadPost = async () => {
       try {
         setLoading(true);
         // ہم یہاں siteId=wisemix بھیج رہے ہیں تاکہ API اسے پہچان لے
-        const res = await fetch(`/api/posts/${slug}?admin=true&siteId=wisemix`);
+        const res = await fetch(`/api/posts/${slug}?admin=true&siteId=${DEFAULT_SITE_ID}`, {
+          credentials: "include",
+        });
         
         if (!res.ok) {
           const errData = await res.json();
@@ -76,6 +98,7 @@ export default function EditPost() {
           categoryId: post.categoryId?.toString() || "",
           status: post.published ? "published" : "draft",
           featured: post.featured || false,
+          editingPolicy: post.editingPolicy || POST_EDITING_POLICIES.OWNER_ONLY,
         });
 
         setExistingMainImage(post.mainImage || null);
@@ -88,7 +111,7 @@ export default function EditPost() {
     };
 
     loadPost();
-  }, [slug]);
+  }, [slug, status]);
 
   /* ---------------- 3. Handlers ---------------- */
   const handleChange = (field, value) => {
@@ -96,8 +119,9 @@ export default function EditPost() {
   };
 
   const uploadToImageKit = async (file) => {
+    const webpFile = await compressToWebp(file);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", webpFile);
 
     const res = await fetch("/api/upload", {
       method: "POST",
@@ -121,20 +145,37 @@ export default function EditPost() {
       let ogImage = existingOgImage;
 
       // اگر نئی فائل سلیکٹ کی ہے تو اپلوڈ کریں
-      if (mainImageFile) {
+      if (!isContentOnlyEdit && mainImageFile) {
         mainImage = await uploadToImageKit(mainImageFile);
       }
-      if (ogImageFile) {
+      if (!isContentOnlyEdit && ogImageFile) {
         ogImage = await uploadToImageKit(ogImageFile);
       }
 
-      const payload = {
-        ...formData,
-        mainImage,
-        ogImage: ogImage || mainImage,
-        categoryId: Number(formData.categoryId),
-        published: formData.status === "published",
-      };
+      const payload = isContentOnlyEdit
+        ? {
+            content: formData.content,
+          }
+        : {
+            title: formData.title,
+            slug: formData.slug,
+            shortDesc: formData.shortDesc,
+            content: formData.content,
+            metaTitle: formData.metaTitle,
+            metaDesc: formData.metaDesc,
+            categoryId: Number(formData.categoryId),
+            mainImage,
+            ogImage: ogImage || mainImage,
+          };
+
+      if (canPublishPost) {
+        payload.published = formData.status === "published";
+        payload.featured = Boolean(formData.featured);
+      }
+
+      if (isSuperAdmin) {
+        payload.editingPolicy = formData.editingPolicy;
+      }
 
       const res = await fetch(`/api/posts/${slug}`, {
         method: "PATCH",
@@ -176,7 +217,7 @@ export default function EditPost() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Post Title</label>
-                <input required type="text" value={formData.title} onChange={(e) => handleChange("title", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input required type="text" value={formData.title} disabled={isContentOnlyEdit} onChange={(e) => handleChange("title", e.target.value)} className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${isContentOnlyEdit ? "bg-gray-100 cursor-not-allowed" : ""}`} />
               </div>
 
               <div>
@@ -186,13 +227,18 @@ export default function EditPost() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Short Description</label>
-                <textarea value={formData.shortDesc} onChange={(e) => handleChange("shortDesc", e.target.value)} rows={3} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <textarea value={formData.shortDesc} disabled={isContentOnlyEdit} onChange={(e) => handleChange("shortDesc", e.target.value)} rows={3} className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${isContentOnlyEdit ? "bg-gray-100 cursor-not-allowed" : ""}`} />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Content</label>
                 <RichTextEditor value={formData.content} onChange={(val) => handleChange("content", val)} />
               </div>
+              {isContentOnlyEdit && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  This post is shared by Super Admin in content-only mode. You can update content only.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -204,7 +250,7 @@ export default function EditPost() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
-                <select required value={formData.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+                <select required disabled={isContentOnlyEdit} value={formData.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} className={`w-full p-3 border border-gray-300 rounded-lg ${isContentOnlyEdit ? "bg-gray-100 cursor-not-allowed" : ""}`}>
                   <option value="">Select Category</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -212,18 +258,40 @@ export default function EditPost() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-                <select value={formData.status} onChange={(e) => handleChange("status", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-                </select>
-              </div>
+              {canPublishPost ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                    <select value={formData.status} onChange={(e) => handleChange("status", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={formData.featured} onChange={(e) => handleChange("featured", e.target.checked)} className="w-5 h-5 rounded" />
-                <span className="font-semibold text-gray-700">Featured Post</span>
-              </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.featured} onChange={(e) => handleChange("featured", e.target.checked)} className="w-5 h-5 rounded" />
+                    <span className="font-semibold text-gray-700">Featured Post</span>
+                  </label>
+                </>
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                  Status and featured controls are managed by publishing roles.
+                </div>
+              )}
+
+              {isSuperAdmin && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Editor Access Policy</label>
+                  <select
+                    value={formData.editingPolicy}
+                    onChange={(e) => handleChange("editingPolicy", e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg"
+                  >
+                    <option value={POST_EDITING_POLICIES.OWNER_ONLY}>Owner Only</option>
+                    <option value={POST_EDITING_POLICIES.SUPER_ADMIN_CONTENT_ONLY}>Allow Editors: Content Only</option>
+                  </select>
+                </div>
+              )}
 
               <button disabled={saving} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400">
                 {saving ? "Saving Changes..." : "Update Post"}
@@ -237,11 +305,11 @@ export default function EditPost() {
               {existingMainImage && (
                 <div>
                   <p className="text-xs font-bold text-gray-500 mb-1">Current Image:</p>
-                  <img src={existingMainImage.startsWith('http') ? existingMainImage : `${IMAGEKIT_ENDPOINT}${existingMainImage}`} className="w-full h-32 object-cover rounded-lg border mb-2" alt="Current" />
+                  <img src={resolveImageUrl(existingMainImage)} className="w-full h-32 object-cover rounded-lg border mb-2" alt="Current" />
                 </div>
               )}
               <label className="block text-sm font-semibold text-gray-700">Change Main Image</label>
-              <input type="file" accept="image/*" onChange={(e) => setMainImageFile(e.target.files[0])} className="text-xs" />
+              <input type="file" disabled={isContentOnlyEdit} accept="image/*" onChange={(e) => setMainImageFile(e.target.files[0])} className="text-xs disabled:opacity-50 disabled:cursor-not-allowed" />
             </div>
           </div>
         </div>
@@ -249,3 +317,5 @@ export default function EditPost() {
     </div>
   );
 }
+
+

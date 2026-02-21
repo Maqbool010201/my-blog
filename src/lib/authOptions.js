@@ -1,6 +1,7 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 
 export const authOptions = {
   providers: [
@@ -16,30 +17,27 @@ export const authOptions = {
         const admin = await prisma.admin.findUnique({
           where: { email: credentials.email },
         });
-
         if (!admin) return null;
 
         const isValid = await bcrypt.compare(credentials.password, admin.password);
         if (!isValid) return null;
 
-        // یہاں "role" اور "siteId" لازمی شامل کریں
-        return { 
-          id: admin.id, 
-          name: admin.name, 
-          email: admin.email, 
+        return {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
           role: admin.role,
-          siteId: admin.siteId // یہ لائن ایڈ کریں
+          siteId: admin.siteId || DEFAULT_SITE_ID,
         };
       },
     }),
   ],
-  // یہاں کال بیکس (Callbacks) کا اضافہ کریں، ورنہ ڈیٹا سیشن میں نہیں جائے گا
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.siteId = user.siteId;
+        token.siteId = user.siteId || DEFAULT_SITE_ID;
       }
       return token;
     },
@@ -47,7 +45,7 @@ export const authOptions = {
       if (token) {
         session.user.id = token.id;
         session.user.role = token.role;
-        session.user.siteId = token.siteId;
+        session.user.siteId = token.siteId || DEFAULT_SITE_ID;
       }
       return session;
     },

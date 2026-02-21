@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import slugify from "slugify";
 import RichTextEditor from "@/components/RichTextEditor";
+import { compressToWebp } from "@/lib/compressToWebp";
+import { useSession } from "next-auth/react";
+import { getAdminPermissions } from "@/lib/adminPermissions";
 
 export default function AddPost() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const perms = getAdminPermissions(session?.user?.role);
 
   // 1. تمام فیلڈز کے لیے اسٹیٹ (State)
   const [formData, setFormData] = useState({
@@ -32,12 +37,23 @@ export default function AddPost() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session || !perms.canCreatePost) {
+      router.push("/admin/posts");
+    }
+  }, [session, status, perms.canCreatePost, router]);
+
   /* ---------------- Categories لوڈ کرنا ---------------- */
   useEffect(() => {
     fetch("/api/categories")
-      .then(res => res.json())
-      .then(setCategories)
-      .catch(() => setError("Failed to load categories"));
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to load categories");
+        return data;
+      })
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch((err) => setError(err.message || "Failed to load categories"));
   }, []);
 
   /* -------- خود بخود سلگ اور ایس ای او ڈیٹا بنانا -------- */
@@ -66,8 +82,9 @@ export default function AddPost() {
   // تصویر کو ImageKit پر اپلوڈ کرنے والا فنکشن
   // اس فنکشن کو تبدیل کریں
   const uploadToImageKit = async (file) => {
+    const webpFile = await compressToWebp(file);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", webpFile);
 
     const res = await fetch("/api/upload", {
       method: "POST",
@@ -251,3 +268,4 @@ export default function AddPost() {
     </div>
   );
 }
+

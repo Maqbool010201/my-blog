@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 
 export async function GET(request) {
   try {
     const url = new URL(request.url);
-    
-    // 1. یہاں سے ہم siteId حاصل کریں گے (جو کہ فرنٹ اینڈ پیرامیٹر سے بھیجے گا)
-    const siteId = url.searchParams.get("siteId");
-    
-    if (!siteId) {
-      return NextResponse.json({ error: "siteId is required" }, { status: 400 });
-    }
+    const siteId = url.searchParams.get("siteId") || DEFAULT_SITE_ID;
 
     const excludeIds = (url.searchParams.get("excludeIds") || "")
       .split(",")
@@ -19,12 +14,20 @@ export async function GET(request) {
 
     const featuredPosts = await prisma.post.findMany({
       where: {
-        siteId: siteId, // صرف اس مخصوص ویب سائٹ کی پوسٹس
+        siteId,
         featured: true,
         published: true,
         id: excludeIds.length ? { notIn: excludeIds } : undefined,
       },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        shortDesc: true,
+        mainImage: true,
+        featured: true,
+        published: true,
+        createdAt: true,
         category: { select: { id: true, name: true, slug: true } },
         author: { select: { id: true, name: true } },
       },

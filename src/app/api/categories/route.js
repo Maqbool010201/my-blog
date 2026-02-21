@@ -3,25 +3,21 @@ import prisma from "@/lib/prisma";
 import slugify from "slugify";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { revalidateTag } from "next/cache";
+import { DEFAULT_SITE_ID, resolveSiteId } from "@/lib/site";
+import { can } from "@/lib/adminPermissions";
 
-/* ----------------------------- GET CATEGORIES ----------------------------- */
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get("slug");
     const includePosts = searchParams.get("includePosts") === "true";
-
-    // لاجک: اگر لاگ ان ہے تو اپنی سائٹ کی، ورنہ ریکوسٹ میں دی گئی سائٹ آئی ڈی کی
-    const siteId = session?.user?.siteId || searchParams.get("siteId");
-
-    if (!siteId && !slug) {
-       return NextResponse.json({ error: "siteId is required" }, { status: 400 });
-    }
+    const siteId = resolveSiteId(session?.user?.siteId, searchParams.get("siteId") || DEFAULT_SITE_ID);
 
     if (slug) {
       const category = await prisma.category.findFirst({
-        where: { slug, siteId: siteId }, // صرف اپنی سائٹ کا سلگ ڈھونڈیں
+        where: { slug, siteId },
         include: includePosts
           ? {
               posts: {
@@ -41,27 +37,28 @@ export async function GET(request) {
       return NextResponse.json(category);
     }
 
-    // تمام کیٹیگریز صرف اپنی سائٹ کی نکالیں
     const categories = await prisma.category.findMany({
-      where: { siteId: siteId },
+      where: { siteId },
       include: { _count: { select: { posts: true } } },
       orderBy: { name: "asc" },
     });
 
     return NextResponse.json(categories);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
   }
 }
 
-/* ----------------------------- CREATE CATEGORY ----------------------------- */
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!can(session.user?.role, "canAccessAllAdminSections")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const data = await request.json();
-    const siteId = session.user?.siteId || "wisemix"; // ڈیفالٹ ویلیو لازمی رکھیں
+    const siteId = resolveSiteId(session.user?.siteId);
 
     if (!data.name?.trim()) {
       return NextResponse.json({ error: "Category name is required" }, { status: 400 });
@@ -72,7 +69,7 @@ export async function POST(request) {
       : slugify(data.name, { lower: true, strict: true });
 
     const existingCategory = await prisma.category.findFirst({
-      where: { siteId: siteId, OR: [{ name: data.name.trim() }, { slug }] },
+      where: { siteId, OR: [{ name: data.name.trim() }, { slug }] },
     });
 
     if (existingCategory) {
@@ -83,11 +80,13 @@ export async function POST(request) {
       data: {
         name: data.name.trim(),
         slug,
-        siteId: siteId, // اب یہ کبھی مسنگ نہیں ہوگا
+        siteId,
         metaTitle: data.metaTitle?.trim() || data.name.trim(),
         metaDescription: data.metaDescription?.trim() || null,
       },
     });
+
+    revalidateTag(`menu-categories-${siteId}`);
 
     return NextResponse.json(category, { status: 201 });
   } catch (error) {

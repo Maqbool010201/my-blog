@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 
 // GET single message
 export async function GET(request, { params }) {
@@ -15,7 +16,7 @@ export async function GET(request, { params }) {
     const message = await prisma.contactMessage.findFirst({
       where: { 
         id: id,
-        siteId: session.user.siteId 
+        siteId: DEFAULT_SITE_ID 
       }
     });
 
@@ -46,7 +47,7 @@ export async function PUT(request, { params }) {
 
     // پہلے چیک کریں کہ کیا یہ میسج اسی کلائنٹ کا ہے
     const existingMessage = await prisma.contactMessage.findFirst({
-      where: { id: id, siteId: session.user.siteId }
+      where: { id: id, siteId: DEFAULT_SITE_ID }
     });
 
     if (!existingMessage) {
@@ -74,7 +75,7 @@ export async function DELETE(request, { params }) {
 
     // صرف اپنی سائٹ کا میسج ڈیلیٹ کرنے کی اجازت دیں
     const message = await prisma.contactMessage.findFirst({
-      where: { id: id, siteId: session.user.siteId }
+      where: { id: id, siteId: DEFAULT_SITE_ID }
     });
 
     if (!message) {

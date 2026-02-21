@@ -9,29 +9,41 @@ export const revalidate = 3600;
 
 const POSTS_PER_PAGE = 6;
 
-export default async function LatestPosts({ page = 1, categorySlug = null }) {
+export default async function LatestPosts({ page = 1, categorySlug = null, query = "" }) {
   const skip = (page - 1) * POSTS_PER_PAGE;
+  const q = String(query || "").trim();
+  const where = {
+    published: true,
+    featured: false,
+    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: "insensitive" } },
+            { shortDesc: { contains: q, mode: "insensitive" } },
+            { content: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
 
   // Prisma query remains the same but now it's statically cached
   const [posts, totalPosts] = await Promise.all([
     prisma.post.findMany({
-      where: {
-        published: true,
-        featured: false,
-        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      where,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        shortDesc: true,
+        mainImage: true,
+        category: { select: { name: true } },
       },
-      include: { category: true, author: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: POSTS_PER_PAGE,
     }),
-    prisma.post.count({
-      where: {
-        published: true,
-        featured: false,
-        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
-      },
-    }),
+    prisma.post.count({ where }),
   ]);
 
   if (!posts.length) {
@@ -39,7 +51,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
       <section className="py-12 bg-gray-50 min-h-[400px] flex items-center">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-gray-800">Latest Articles</h2>
-          <p className="text-gray-600 mt-2">No articles available.</p>
+          <p className="text-gray-600 mt-2">{q ? `No results for "${q}".` : "No articles available."}</p>
         </div>
       </section>
     );
@@ -50,15 +62,15 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
-            Latest Articles
+            {q ? `Search Results for "${q}"` : "Latest Articles"}
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto text-sm md:text-base">
-            Static Content for maximum speed, updated hourly.
+            {q ? "Showing matched posts from your blog." : "Static Content for maximum speed, updated hourly."}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post, index) => (
+          {posts.map((post) => (
             <article
               key={post.id}
               className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full"
@@ -71,7 +83,6 @@ export default async function LatestPosts({ page = 1, categorySlug = null }) {
                     alt={post.title}
                     fill
                     // ISR کے ساتھ پہلی امیج کو priority دیں تاکہ LCP کم ہو
-                    priority={index === 0}
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />

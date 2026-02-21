@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 
 const prisma = new PrismaClient();
 
@@ -14,8 +15,8 @@ export async function GET(req) {
 
     // اگر کلائنٹ ایڈمن ہے تو صرف اس کی سائٹ کا ڈیٹا دکھائیں
     // اگر سپر ایڈمن ہے تو تمام سائٹس کا مجموعی ڈیٹا
-    const siteId = session.user.role === "SUPER_ADMIN" ? undefined : session.user.siteId;
-    const whereClause = siteId ? { where: { siteId } } : {};
+    const siteId = DEFAULT_SITE_ID;
+    const whereClause = { where: { siteId } };
 
     // ایک ہی بار میں تمام ڈیٹا حاصل کریں (Transaction)
     const [
@@ -30,13 +31,13 @@ export async function GET(req) {
       totalAdmins
     ] = await prisma.$transaction([
       prisma.post.count(whereClause),
-      prisma.post.count({ where: { ...(siteId ? { siteId } : {}), published: true } }),
+      prisma.post.count({ where: { siteId, published: true } }),
       prisma.category.count(whereClause),
       prisma.advertisement.count(whereClause),
       prisma.newsletterSubscriber.count(whereClause),
       prisma.legalPage.count(whereClause), // Prisma میں نام legalPage ہے (@map("legal_pages"))
       prisma.socialLink.count(whereClause),
-      prisma.contactMessage.count({ where: { ...(siteId ? { siteId } : {}), status: "unread" } }),
+      prisma.contactMessage.count({ where: { siteId, status: "unread" } }),
       prisma.admin.count() // یہ صرف سپر ایڈمن کے لیے اہم ہے
     ]);
 

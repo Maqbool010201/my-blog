@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { getToken } from "next-auth/jwt";
 
 // Rate limiter instance
 const limiter = rateLimit({
@@ -17,11 +18,52 @@ const rateLimitConfig = {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const role = String(token?.role || "").toUpperCase();
+  const isAuthenticated = Boolean(token);
 
   // Handle API routes only
   const isApi = pathname.startsWith("/api/");
   const isAuthRoute =
     pathname.startsWith("/api/auth") || pathname === "/admin/login";
+  const isSuperAdmin = role === "SUPER_ADMIN";
+
+  const superAdminOnlyPages = [
+    "/admin/users",
+    "/admin/categories",
+    "/admin/legal-pages",
+    "/admin/advertisements",
+    "/admin/contact-messages",
+    "/admin/newsletter-subscribers",
+    "/admin/social-links",
+    "/admin/settings",
+  ];
+
+  // Professional access control flow:
+  // - SUPER_ADMIN should enter from /admin/login
+  // - Staff roles should enter from /login
+  // - Staff cannot open super-admin only pages
+  if (pathname === "/login" && isAuthenticated && isSuperAdmin) {
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+
+  if (pathname === "/admin/login" && isAuthenticated && !isSuperAdmin) {
+    return NextResponse.redirect(new URL("/admin/posts", request.url));
+  }
+
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+
+    const isSuperAdminOnly = superAdminOnlyPages.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`)
+    );
+
+    if (isSuperAdminOnly && !isSuperAdmin) {
+      return NextResponse.redirect(new URL("/admin/posts", request.url));
+    }
+  }
 
   // Apply rate limiting only on public API endpoints, not auth
   if (isApi && !pathname.startsWith("/api/auth")) {
@@ -98,5 +140,6 @@ export const config = {
   matcher: [
     "/api/:path*", // API routes
     "/admin/:path*", // Admin routes
+    "/login", // Team login route
   ],
 };

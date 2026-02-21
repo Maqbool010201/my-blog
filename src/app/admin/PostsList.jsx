@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-// ImageKit public endpoint
-const IMAGEKIT_ENDPOINT = "https://ik.imagekit.io/ag0dicbdub";
+import { resolveImageUrl } from "@/lib/resolveImageUrl";
+import { useSession } from "next-auth/react";
+import { getAdminPermissions } from "@/lib/adminPermissions";
 
 export default function PostsList() {
+  const { data: session } = useSession();
+  const perms = getAdminPermissions(session?.user?.role);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -100,12 +102,14 @@ export default function PostsList() {
           <p className="text-sm text-gray-500">Create, edit and manage posts</p>
         </div>
 
-        <Link
-          href="/admin/posts/add"
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700"
-        >
-          + Add Post
-        </Link>
+        {perms.canCreatePost && (
+          <Link
+            href="/admin/posts/add"
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700"
+          >
+            + Add Post
+          </Link>
+        )}
       </div>
 
       {message && (
@@ -116,8 +120,25 @@ export default function PostsList() {
 
       {/* Table */}
       {posts.length === 0 ? (
-        <div className="p-16 text-center text-gray-400">
-          No posts found
+        <div className="p-16 text-center">
+          <p className="text-gray-500 font-semibold">
+            {perms.canCreatePost
+              ? "No posts found yet."
+              : "No editable posts found for your account."}
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            {perms.canCreatePost
+              ? "Create your first post to get started."
+              : "Your role can edit only assigned/owned posts. Ask Super Admin to assign a post or change your role."}
+          </p>
+          {perms.canCreatePost && (
+            <Link
+              href="/admin/posts/add"
+              className="inline-flex mt-5 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700"
+            >
+              + Create New Post
+            </Link>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -134,12 +155,7 @@ export default function PostsList() {
 
             <tbody className="divide-y">
               {posts.map(post => {
-                let imageUrl = "/uploads/placeholder.png";
-                if (post.mainImage) {
-                  imageUrl = post.mainImage.startsWith("http")
-                    ? post.mainImage
-                    : `${IMAGEKIT_ENDPOINT}/${post.mainImage}?tr=w-100,h-100,fo-auto`;
-                }
+                const imageUrl = resolveImageUrl(post.mainImage, "/uploads/placeholder.png");
 
                 return (
                   <tr key={post.id} className="hover:bg-gray-50">
@@ -158,49 +174,73 @@ export default function PostsList() {
                     </td>
 
                     <td className="p-4 text-center">
-                      <button
-                        onClick={() =>
-                          updatePostField(post, "published", !post.published)
-                        }
-                        className={`px-3 py-1 text-xs font-bold rounded-full ${
+                      {perms.canPublishPost ? (
+                        <button
+                          onClick={() =>
+                            updatePostField(post, "published", !post.published)
+                          }
+                          className={`px-3 py-1 text-xs font-bold rounded-full ${
+                            post.published
+                              ? "bg-green-100 text-green-600"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {post.published ? "Published" : "Draft"}
+                        </button>
+                      ) : (
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
                           post.published
                             ? "bg-green-100 text-green-600"
                             : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {post.published ? "Published" : "Draft"}
-                      </button>
+                        }`}>
+                          {post.published ? "Published" : "Draft"}
+                        </span>
+                      )}
                     </td>
 
                     <td className="p-4 text-center">
-                      <button
-                        onClick={() =>
-                          updatePostField(post, "featured", !post.featured)
-                        }
-                        className={`px-3 py-1 text-xs font-bold rounded-full ${
+                      {perms.canPublishPost ? (
+                        <button
+                          onClick={() =>
+                            updatePostField(post, "featured", !post.featured)
+                          }
+                          className={`px-3 py-1 text-xs font-bold rounded-full ${
+                            post.featured
+                              ? "bg-yellow-100 text-yellow-600"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {post.featured ? "Featured" : "Normal"}
+                        </button>
+                      ) : (
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
                           post.featured
                             ? "bg-yellow-100 text-yellow-600"
                             : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {post.featured ? "Featured" : "Normal"}
-                      </button>
+                        }`}>
+                          {post.featured ? "Featured" : "Normal"}
+                        </span>
+                      )}
                     </td>
 
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <Link
-                          href={`/admin/posts/edit/${post.slug}`}
-                          className="px-3 py-2 bg-blue-50 text-blue-600 rounded"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => deletePost(post)}
-                          className="px-3 py-2 bg-red-50 text-red-600 rounded"
-                        >
-                          Delete
-                        </button>
+                        {perms.canEditPost && (
+                          <Link
+                            href={`/admin/posts/edit/${post.slug}`}
+                            className="px-3 py-2 bg-blue-50 text-blue-600 rounded"
+                          >
+                            Edit
+                          </Link>
+                        )}
+                        {perms.canDeletePost && (
+                          <button
+                            onClick={() => deletePost(post)}
+                            className="px-3 py-2 bg-red-50 text-red-600 rounded"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

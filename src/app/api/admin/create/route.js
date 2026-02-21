@@ -1,60 +1,77 @@
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth/next";
+import { DEFAULT_SITE_ID } from "@/lib/site";
+
+export async function GET() {
+  try {
+    const adminCount = await prisma.admin.count();
+    return NextResponse.json({
+      locked: adminCount > 0,
+      adminCount,
+    });
+  } catch (error) {
+    console.error("Admin bootstrap status error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // صرف SUPER_ADMIN ہی نئے ایڈمنز یا کلائنٹس بنا سکتا ہے
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    const adminCount = await prisma.admin.count();
+    if (adminCount > 0) {
       return NextResponse.json(
-        { error: "Unauthorized: Only SUPER_ADMIN can create admins" },
+        { error: "Setup locked: first admin is already created" },
         { status: 403 }
       );
     }
 
-    const { name, email, password, role, siteId } = await req.json();
+    const { name, email, password } = await req.json();
 
-    // ویلیڈیشن: SaaS کے لیے siteId اب لازمی ہے
-    if (!name || !email || !password || !role || !siteId) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "All fields including siteId are required" },
+        { error: "Name, email, and password are required" },
         { status: 400 }
       );
     }
 
-    // چیک کریں کہ ای میل پہلے سے تو نہیں
-    const exists = await prisma.admin.findUnique({ where: { email } });
-    if (exists) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: "Admin with this email already exists" },
-        { status: 409 }
+        { error: "Password must be at least 8 characters" },
+        { status: 400 }
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // نیا ایڈمن/کلائنٹ بنائیں
     const admin = await prisma.admin.create({
-      data: { 
-        name, 
-        email, 
-        password: hashedPassword, 
-        role, 
-        siteId // یہاں اس ایڈمن کو اس کی مخصوص ویب سائٹ الاٹ ہو رہی ہے
+      data: {
+        name: String(name).trim(),
+        email: normalizedEmail,
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+        siteId: DEFAULT_SITE_ID,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role, siteId: admin.siteId },
-    }, { status: 201 });
-
-  } catch (err) {
-    console.error("Admin Creation Error:", err);
+    return NextResponse.json(
+      {
+        success: true,
+        message: "First admin created successfully. Setup is now locked.",
+        admin,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Admin bootstrap error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

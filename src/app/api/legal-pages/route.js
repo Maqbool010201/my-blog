@@ -1,54 +1,48 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { DEFAULT_SITE_ID, resolveSiteId } from "@/lib/site";
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    // سب سے پہلے URL پیرامیٹر سے چیک کریں، اگر نہیں تو "wisemix" ڈیفالٹ رکھیں
-    const siteId = searchParams.get("siteId") || "wisemix";
+    const siteId = searchParams.get("siteId") || DEFAULT_SITE_ID;
 
     const legalPages = await prisma.legalPage.findMany({
-      where: { 
-        siteId: siteId,
-        isActive: true 
-      },
-      orderBy: { order: 'asc' },
+      where: { siteId, isActive: true },
+      orderBy: { order: "asc" },
     });
-    
     return NextResponse.json(legalPages);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
     const { slug, title, content, description, order } = body;
-
-    // یہاں زبردستی "wisemix" سیٹ کریں اگر سیشن میں کچھ اور ہے
-    const targetSiteId = "wisemix"; 
+    const siteId = resolveSiteId(session.user?.siteId);
 
     const legalPage = await prisma.legalPage.create({
       data: {
-        siteId: targetSiteId,
+        siteId,
         slug: slug.trim().toLowerCase(),
         title: title.trim(),
-        content: content,
-        description: description || '',
+        content: content || "",
+        description: description || "",
         order: order || 0,
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     return NextResponse.json(legalPage, { status: 201 });
   } catch (error) {
-    console.error("Creation Error:", error);
-    return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
+    console.error("Legal page creation error:", error);
+    return NextResponse.json({ error: "Failed to create" }, { status: 500 });
   }
 }

@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { signIn, getSession, signOut } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const setupLocked = searchParams.get("setup") === "locked";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,6 +24,13 @@ export default function Login() {
     if (res?.error) {
       setError("Invalid email or password");
     } else {
+      const currentSession = await getSession();
+      const role = String(currentSession?.user?.role || "").toUpperCase();
+      if (role !== "SUPER_ADMIN") {
+        await signOut({ redirect: false });
+        setError("This portal is only for super admin. Use /login");
+        return;
+      }
       router.push("/admin/dashboard");
     }
   };
@@ -30,6 +39,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-2xl font-semibold text-center mb-6">Admin Login</h1>
+        {setupLocked && (
+          <p className="text-amber-600 text-center text-sm mb-4">
+            First-admin setup is locked. Please sign in with existing admin credentials.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

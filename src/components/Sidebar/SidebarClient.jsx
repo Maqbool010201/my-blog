@@ -12,7 +12,7 @@ export default function SidebarClient({ siteId }) {
     try {
       const res = await fetch("/api/newsletter", {
         method: "POST",
-        body: JSON.stringify({ email, siteId: siteId || "wisemix" }),
+        body: JSON.stringify({ email, siteId }),
         headers: { "Content-Type": "application/json" },
       });
       const data = await res.json();

@@ -1,27 +1,43 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import slugify from 'slugify';
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import slugify from "slugify";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { DEFAULT_SITE_ID, resolveSiteId } from "@/lib/site";
 
-/* ----------------------------- GET ALL POSTS ----------------------------- */
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const siteId = searchParams.get('siteId'); // فرنٹ اینڈ سے سائٹ آئی ڈی لیں
+    const siteId = searchParams.get("siteId") || DEFAULT_SITE_ID;
 
     const posts = await prisma.post.findMany({
-      where: {
-        ...(siteId && { siteId: siteId }), // اگر سائٹ آئی ڈی ہو تو صرف اس کی پوسٹس دکھائیں
-        published: true // پبلک API میں صرف پبلش شدہ پوسٹس
+      where: { siteId, published: true },
+      select: {
+        id: true,
+        siteId: true,
+        title: true,
+        slug: true,
+        shortDesc: true,
+        content: true,
+        metaTitle: true,
+        metaDesc: true,
+        ogTitle: true,
+        ogDesc: true,
+        ogImage: true,
+        canonical: true,
+        mainImage: true,
+        categoryId: true,
+        authorId: true,
+        published: true,
+        featured: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: { id: true, name: true, slug: true, metaTitle: true, metaDescription: true },
+        },
+        author: { select: { id: true, name: true } },
       },
-      include: {
-        category: true,
-        author: {
-          select: { name: true, image: true } // سیکیورٹی کے لیے صرف نام اور تصویر لیں
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(posts);
@@ -31,63 +47,78 @@ export async function GET(req) {
   }
 }
 
-/* ----------------------------- CREATE NEW POST ----------------------------- */
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    
-    // سیکیورٹی: صرف لاگ ان شدہ یوزر ہی پوسٹ بنا سکے
-    if (!session || !session.user.siteId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const data = await req.json();
-
     if (!data.title || !data.categoryId) {
       return NextResponse.json({ error: "Title and Category are required" }, { status: 400 });
     }
 
-    // 1. یونیک سلگ (Unique Slug) بنانا
+    const siteId = resolveSiteId(session.user?.siteId);
     let baseSlug = data.slug || slugify(data.title, { lower: true, strict: true });
     let finalSlug = baseSlug;
     let counter = 1;
+
     while (true) {
-      const existingPost = await prisma.post.findFirst({ 
-        where: { slug: finalSlug, siteId: session.user.siteId } 
+      const existingPost = await prisma.post.findFirst({
+        where: { slug: finalSlug, siteId },
+        select: { id: true },
       });
       if (!existingPost) break;
       finalSlug = `${baseSlug}-${counter}`;
-      counter++;
+      counter += 1;
     }
 
-    // 2. کینونیکل یو آر ایل
-    const canonicalUrl = data.canonicalUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${finalSlug}`;
+    const canonicalUrl =
+      data.canonicalUrl || `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/blog/${finalSlug}`;
 
-    // 3. ڈیٹا بیس میں پوسٹ بنانا
     const post = await prisma.post.create({
       data: {
-        siteId: session.user.siteId, // کرنٹ کلائنٹ کی سائٹ آئی ڈی
-        authorId: session.user.id,   // لاگ ان شدہ ایڈمن کی آئی ڈی
+        siteId,
+        authorId: session.user.id,
         title: data.title,
         slug: finalSlug,
         shortDesc: data.shortDescription || data.shortDesc || null,
         content: data.body || data.content || "",
         metaTitle: data.metaTitle || data.title,
         metaDesc: data.metaDescription || data.metaDesc || data.shortDesc,
-        mainImage: data.mainImage || null, 
+        mainImage: data.mainImage || null,
         canonical: canonicalUrl,
         published: data.published !== undefined ? data.published : true,
         featured: data.featured || false,
         categoryId: Number(data.categoryId),
       },
-      include: {
-        category: true,
-        author: true
-      }
+      select: {
+        id: true,
+        siteId: true,
+        title: true,
+        slug: true,
+        shortDesc: true,
+        content: true,
+        metaTitle: true,
+        metaDesc: true,
+        ogTitle: true,
+        ogDesc: true,
+        ogImage: true,
+        canonical: true,
+        mainImage: true,
+        categoryId: true,
+        authorId: true,
+        published: true,
+        featured: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: { id: true, name: true, slug: true, metaTitle: true, metaDescription: true },
+        },
+        author: { select: { id: true, name: true } },
+      },
     });
 
     return NextResponse.json({ ...post, message: "Post created successfully!" }, { status: 201 });
-
   } catch (error) {
     console.error("Error creating post:", error);
     return NextResponse.json({ error: "Failed to create post" }, { status: 500 });

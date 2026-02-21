@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import slugify from "slugify";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { can } from "@/lib/adminPermissions";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 
 /* ----------------------------- GET CATEGORY ----------------------------- */
 export async function GET(request, { params }) {
@@ -19,7 +21,7 @@ export async function GET(request, { params }) {
     const category = await prisma.category.findFirst({ 
       where: { 
         id: categoryId,
-        siteId: session?.user?.siteId || undefined // ایڈمن پینل کے لیے
+        siteId: DEFAULT_SITE_ID // single-tenant
       },
       include: {
         posts: {
@@ -46,6 +48,9 @@ export async function PUT(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!can(session.user?.role, "canAccessAllAdminSections")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
     const data = await request.json();
@@ -53,7 +58,7 @@ export async function PUT(request, { params }) {
 
     // صرف اپنی سائٹ کی کیٹیگری چیک کریں
     const existingCategory = await prisma.category.findFirst({
-      where: { id: categoryId, siteId: session.user.siteId }
+      where: { id: categoryId, siteId: DEFAULT_SITE_ID }
     });
 
     if (!existingCategory) {
@@ -66,7 +71,7 @@ export async function PUT(request, { params }) {
       
       // چیک کریں کہ اس سائٹ پر یہ سلگ ڈپلیکیٹ تو نہیں
       const slugConflict = await prisma.category.findFirst({
-        where: { slug: newSlug, siteId: session.user.siteId, id: { not: categoryId } }
+        where: { slug: newSlug, siteId: DEFAULT_SITE_ID, id: { not: categoryId } }
       });
       if (slugConflict) return NextResponse.json({ error: "Slug already exists" }, { status: 400 });
     }
@@ -93,12 +98,15 @@ export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!can(session.user?.role, "canAccessAllAdminSections")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
     const categoryId = parseInt(id);
 
     const existingCategory = await prisma.category.findFirst({
-      where: { id: categoryId, siteId: session.user.siteId },
+      where: { id: categoryId, siteId: DEFAULT_SITE_ID },
       include: { _count: { select: { posts: true } } }
     });
 

@@ -26,10 +26,10 @@ export async function generateMetadata({ params }) {
   
   if (!legalPage) return { title: 'Page Not Found' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   return {
-    title: `${legalPage.title} - Wisemix Media`,
+    title: `${legalPage.title} - ${process.env.NEXT_PUBLIC_BRAND_NAME || "My Blog"}`,
     description: legalPage.description || legalPage.title,
     alternates: {
       canonical: `${siteUrl}/legal/${slug}`,
@@ -44,7 +44,7 @@ export default async function LegalPage({ params }) {
   const legalPage = await getLegalPage(slug);
   if (!legalPage) notFound();
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   // --- BREADCRUMB SCHEMA (JSON-LD) ---
   const breadcrumbSchema = {

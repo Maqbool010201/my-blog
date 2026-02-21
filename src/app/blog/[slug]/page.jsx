@@ -5,6 +5,8 @@ import Advertisement from "@/components/Advertisement/Advertisement";
 import SocialShare from "@/components/SocialShare/SocialShare";
 import CopyButtonScript from "@/components/CopyButtonScript";
 import IKImage from "@/components/IKImage"; 
+import { resolveImageUrl } from "@/lib/resolveImageUrl";
+import { DEFAULT_SITE_ID } from "@/lib/site";
 import "highlight.js/styles/atom-one-dark.css";
 
 export const revalidate = 3600; 
@@ -15,15 +17,26 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const post = await prisma.post.findUnique({
-    where: { slug_siteId: { slug: slug, siteId: "wisemix" } },
-    include: { category: true },
+    where: { slug_siteId: { slug: slug, siteId: DEFAULT_SITE_ID } },
+    select: {
+      title: true,
+      slug: true,
+      shortDesc: true,
+      metaTitle: true,
+      metaDesc: true,
+      ogTitle: true,
+      ogDesc: true,
+      mainImage: true,
+      category: { select: { slug: true } },
+    },
   });
 
   if (!post) return { title: "Post Not Found" };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
-  const imageUrl = post.mainImage 
-    ? (post.mainImage.startsWith('http') ? post.mainImage : `https://ik.imagekit.io/ag0dicbdub/${post.mainImage.replace(/^\/+/, '')}`) 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const normalizedImage = resolveImageUrl(post.mainImage);
+  const imageUrl = normalizedImage
+    ? (normalizedImage.startsWith("http") ? normalizedImage : `${siteUrl}${normalizedImage}`)
     : `${siteUrl}/images/default-og.jpg`;
 
   return {
@@ -40,21 +53,12 @@ export async function generateMetadata({ params }) {
   };
 }
 
-/**
- * Helper to Clean Image Path
- */
-const getImageUrl = (imgData) => {
-  if (!imgData) return ""; 
-  let path = typeof imgData === "object" ? imgData.mainImage : imgData;
-  if (path.startsWith("http")) {
-    const parts = path.split(".io/ag0dicbdub/");
-    path = parts.length > 1 ? parts[1] : path;
-  }
-  return path.replace(/^\/+/, ''); 
-};
-
 const getContentParts = (content) => {
   if (!content) return { firstHalf: "", secondHalf: "" };
+  const lower = content.toLowerCase();
+  const hasTable = /<table|<thead|<tbody|<tfoot|<tr|<td|<th/.test(lower);
+  if (hasTable) return { firstHalf: content, secondHalf: "" };
+
   const paragraphs = content.split("</p>");
   if (paragraphs.length <= 4) return { firstHalf: content, secondHalf: "" };
   const middleIndex = Math.floor(paragraphs.length / 2);
@@ -69,8 +73,17 @@ export default async function PostPage({ params }) {
   
   // 1. Fetch the main post
   const post = await prisma.post.findUnique({
-    where: { slug_siteId: { slug: slug, siteId: "wisemix" } },
-    include: { category: true, author: true },
+    where: { slug_siteId: { slug: slug, siteId: DEFAULT_SITE_ID } },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      content: true,
+      published: true,
+      createdAt: true,
+      mainImage: true,
+      category: { select: { slug: true, name: true } },
+    },
   });
 
   if (!post || !post.published) notFound();
@@ -78,7 +91,7 @@ export default async function PostPage({ params }) {
   // 2. Fetch the 6 LATEST posts globally (Latest Updates)
   const latestPosts = await prisma.post.findMany({
     where: {
-      siteId: "wisemix",
+      siteId: DEFAULT_SITE_ID,
       published: true,
       NOT: { id: post.id }, // Exclude current post
     },
@@ -95,8 +108,8 @@ export default async function PostPage({ params }) {
 
   const { firstHalf, secondHalf } = getContentParts(post.content);
   const formatDate = (date) => new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-  const mainImagePath = getImageUrl(post.mainImage);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://wisemixmedia.com";
+  const mainImagePath = resolveImageUrl(post.mainImage);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -175,7 +188,7 @@ export default async function PostPage({ params }) {
                     <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group flex flex-col">
                       <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 mb-4 shadow-sm border border-gray-50">
                         <IKImage
-                          src={getImageUrl(rel.mainImage)}
+                          src={resolveImageUrl(rel.mainImage)}
                           alt={rel.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"

@@ -13,7 +13,13 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
         id: { notIn: excludeIds },
       }),
     },
-    include: { category: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      mainImage: true,
+      category: { select: { name: true } },
+    },
     orderBy: { createdAt: "desc" },
     take: 8,
   });
@@ -35,7 +41,7 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
       </div>
 
       <div className="container mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {posts.map((post, index) => {
+        {posts.map((post) => {
           const imageSrc = post.mainImage || "/images/blog/placeholder.svg";
 
           return (
@@ -46,7 +52,6 @@ export default async function FeaturedPosts({ excludeIds = [] }) {
                     src={imageSrc}
                     alt={post.title}
                     fill
-                    priority={index < 2}
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
