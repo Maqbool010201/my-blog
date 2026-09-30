@@ -38,7 +38,7 @@ function Brand({ branding }) {
   );
 }
 
-export default function MenuClient({ categories, branding, isAuthenticated = false }) {
+export default function MenuClient({ branding, isAuthenticated = false }) {
   const [open, setOpen] = useState(false);
   const [brandTapCount, setBrandTapCount] = useState(0);
   const [brandTapStartedAt, setBrandTapStartedAt] = useState(0);
@@ -82,25 +82,25 @@ export default function MenuClient({ categories, branding, isAuthenticated = fal
               Home
             </Link>
           </li>
-
-          {categories.map((cat) => (
-            <li key={cat.id}>
-              <Link
-                href={`/category/${cat.slug}`}
-                className={
-                  pathname === `/category/${cat.slug}`
-                    ? "capitalize text-gray-900 font-semibold"
-                    : "capitalize hover:text-gray-900"
-                }
-              >
-                {cat.name}
-              </Link>
-            </li>
-          ))}
+          <li>
+            <Link href="/tools" className={pathname.startsWith("/tools") ? "text-gray-900 font-semibold" : "hover:text-gray-900"}>
+              Tools
+            </Link>
+          </li>
+          <li>
+            <Link href="https://cv.wisemixmedia.com/" className="hover:text-gray-900">
+              CV Builder
+            </Link>
+          </li>
+          <li>
+            <Link href="/blog" className={pathname.startsWith("/blog") ? "text-gray-900 font-semibold" : "hover:text-gray-900"}>
+              Blog
+            </Link>
+          </li>
         </ul>
 
         <div className="hidden lg:flex items-center ml-4 gap-2">
-          <form action="/" method="get" className="flex items-center">
+          <form action="/blog" method="get" className="flex items-center">
             <input type="hidden" name="page" value="1" />
             <input
               type="search"
@@ -144,7 +144,7 @@ export default function MenuClient({ categories, branding, isAuthenticated = fal
       >
         <ul className="px-4 py-3 flex flex-col gap-3 text-sm font-medium text-gray-700">
           <li>
-            <form action="/" method="get" className="flex gap-2">
+            <form action="/blog" method="get" className="flex gap-2">
               <input type="hidden" name="page" value="1" />
               <input
                 type="search"
@@ -162,13 +162,21 @@ export default function MenuClient({ categories, branding, isAuthenticated = fal
               Home
             </Link>
           </li>
-          {categories.map((cat) => (
-            <li key={cat.id}>
-              <Link href={`/category/${cat.slug}`} onClick={() => setOpen(false)} className="capitalize">
-                {cat.name}
-              </Link>
-            </li>
-          ))}
+          <li>
+            <Link href="/tools" onClick={() => setOpen(false)}>
+              Tools
+            </Link>
+          </li>
+          <li>
+            <Link href="https://cv.wisemixmedia.com/" onClick={() => setOpen(false)}>
+              CV Builder
+            </Link>
+          </li>
+          <li>
+            <Link href="/blog" onClick={() => setOpen(false)}>
+              Blog
+            </Link>
+          </li>
           {isAuthenticated ? (
             <li>
               <button

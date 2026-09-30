@@ -8,23 +8,17 @@ export default async function Footer() {
   const siteId = DEFAULT_SITE_ID;
 
   let legalPages = [];
-  let categories = [];
   let socialLinks = [];
 
   try {
-    const [legalRes, catRes, socialRes] = await Promise.all([
+    const [legalRes, socialRes] = await Promise.all([
       fetch(`${baseUrl}/api/legal-pages?siteId=${siteId}`, { next: { revalidate: 3600 } }).catch(() => null),
-      fetch(`${baseUrl}/api/categories?siteId=${siteId}`, { next: { revalidate: 3600 } }).catch(() => null),
       fetch(`${baseUrl}/api/admin/social-links?siteId=${siteId}`, { next: { revalidate: 3600 } }).catch(() => null),
     ]);
 
     if (legalRes?.ok) {
       const data = await legalRes.json();
       legalPages = Array.isArray(data) ? data.slice(0, 10) : [];
-    }
-    if (catRes?.ok) {
-      const data = await catRes.json();
-      categories = Array.isArray(data) ? data.slice(0, 10) : [];
     }
     if (socialRes?.ok) {
       const data = await socialRes.json();
@@ -46,7 +40,7 @@ export default async function Footer() {
               {brandName}
             </h3>
             <p className="text-gray-400 mb-6 max-w-sm text-sm leading-relaxed">
-              Latest stories, insights, and useful guides.
+              Portfolio, tools, and practical guides for modern web work.
             </p>
             <div className="flex items-center">
               <FooterSocialIcons links={socialLinks} />
@@ -57,6 +51,9 @@ export default async function Footer() {
             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Quick Links</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
               <li><Link href="/" className="hover:text-blue-400 transition-colors">Home</Link></li>
+              <li><Link href="/tools" className="hover:text-blue-400 transition-colors">Tools</Link></li>
+              <li><Link href="https://cv.wisemixmedia.com/" className="hover:text-blue-400 transition-colors">CV Builder</Link></li>
+              <li><Link href="/blog" className="hover:text-blue-400 transition-colors">Blog</Link></li>
               <li><Link href="/contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
             </ul>
           </nav>
@@ -77,15 +74,12 @@ export default async function Footer() {
           </nav>
 
           <nav className="col-span-1">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Categories</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-200 mb-5">Explore</h4>
             <ul className="space-y-3 text-gray-400 text-sm">
-              {categories.map((cat) => (
-                <li key={cat.id}>
-                  <Link href={`/category/${cat.slug}`} className="hover:text-blue-400 transition-colors capitalize">
-                    {cat.name}
-                  </Link>
-                </li>
-              ))}
+              <li><Link href="/blog" className="hover:text-blue-400 transition-colors">All Articles</Link></li>
+              <li><Link href="/tools/image-compressor" className="hover:text-blue-400 transition-colors">Image Compressor</Link></li>
+              <li><Link href="/tools/image-resizer" className="hover:text-blue-400 transition-colors">Image Resizer</Link></li>
+              <li><Link href="/tools/pdf-generator" className="hover:text-blue-400 transition-colors">PDF Generator</Link></li>
             </ul>
           </nav>
         </div>

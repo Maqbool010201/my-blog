@@ -9,7 +9,7 @@ export const revalidate = 3600;
 
 const POSTS_PER_PAGE = 6;
 
-export default async function LatestPosts({ page = 1, categorySlug = null, query = "" }) {
+export default async function LatestPosts({ page = 1, categorySlug = null, query = "", basePath = null }) {
   const skip = (page - 1) * POSTS_PER_PAGE;
   const q = String(query || "").trim();
   const where = {
@@ -120,7 +120,7 @@ export default async function LatestPosts({ page = 1, categorySlug = null, query
             <Pagination
               totalPosts={totalPosts}
               postsPerPage={POSTS_PER_PAGE}
-              basePath={categorySlug ? `/category/${categorySlug}` : "/"}
+              basePath={basePath || (categorySlug ? `/category/${categorySlug}` : "/blog")}
               currentPage={page}
             />
           )}
